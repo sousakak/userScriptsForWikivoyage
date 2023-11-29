@@ -1,9 +1,9 @@
 // <source lang="javascript">
-// 完成状況 : 校正段階
-// 当スクリプトは校正段階です。使用できますが、予期せぬ挙動をする可能性があります。その際はTmvの会話ページにお知らせください。
+// 完成状況 : 完成
+// 当スクリプトは完成しています。不具合は出ていませんが、使用する際には自己責任でお願い致します。
 /******************************************************************************/
-// ja>>purge
-//   >>ページにキャッシュを破棄するリンク（表示は「更新」）を追加する
+// ja>>ListingsOnWikiEditor
+//   >>デスクトップ版のソースで編集時にリスティングを1クリックで追加できるボタンを付ける
 //   >>
 //   >>作者    : Tmv
 //   >>URL     : https://ja.wikivoyage.org/w/index.php?title=User:Tmv/custom/Edit_toolbar.js
@@ -18,7 +18,7 @@ if ( [ 'edit', 'submit' ].indexOf( mw.config.get( 'wgAction' ) ) !== -1 && mw.co
     var i18n = {
         lang: 'ja',
         SECTION_NAME: 'リスト',
-        GROUP_NAME: 'リスト',
+        GROUP_NAME: 'リスティング',
         LISTING_TEMPLATES: {
             see: {
                 name: 'see',
