@@ -1,0 +1,14 @@
+.voy-stalist-edit {
+    float: right;
+}
+
+.voy-stalist-dialog {
+    max-width: none;
+    max-height: none;
+    width: 100vw;
+    height: 100vh;
+}
+
+.voy-stalist-dialog-menu {
+    margin: 0 auto;
+}
