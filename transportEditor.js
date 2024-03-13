@@ -13,8 +13,7 @@
 //   >>mw.loader.load('//ja.wikivoyage.org/w/index.php?title=User:Tmv/custom/transportEditor.js&action=raw&ctype=text/javascript');
 /******************************************************************************/
 
-
-mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
+mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
     const i18n = {
         translations : {
             dialogTitleEdit : "駅一覧を編集",
@@ -24,10 +23,13 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
             dialogButtonDefault : "キャンセル",
             dialogMenuAddTable : "表を追加",
             dialogInputRouteQID : "路線のウィキデータID",
+            dialogInputRouteTitle : "タイトルに表示する路線名",
+            dialogInputRouteColor : "路線の色",
             labelButtonEdit : "編集",
             labelButtonAdd : "追加",
             tooltipButtonAdd : "駅一覧を追加",
-            errorUnknownMenuClicked : "不明なメニューボタンが押されました"
+            errorUnknownMenuClicked : "不明なメニューボタンが押されました",
+            errorUnexpectedString : "予期せぬ文字列が指定されました"
         },
         localizations : {
             lang : 'ja',
@@ -35,8 +37,18 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
         }
     };
 
-    const { ref } = require( 'vue' );
-	const { CdxDialog, CdxButton, CdxTabs, CdxTab, CdxIcon, CdxField, CdxLookup, CdxButtonGroup } = require( '@wikimedia/codex' );
+    const { ref, computed } = require( 'vue' );
+	const {
+        CdxDialog,
+        CdxButton,
+        CdxTabs,
+        CdxTab,
+        CdxIcon,
+        CdxField,
+        CdxLookup,
+        CdxTextInput,
+        CdxButtonGroup
+    } = require( '@wikimedia/codex' );
     const cdxIconAdd = `
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -107,7 +119,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
                                         "
                                         v-if="!(addMenuOpened)"
                                     >
-                                        <cdx-button v-on:click="addTable()">
+                                        <cdx-button v-on:click="addMenuOpened = true">
                                             <cdx-icon :icon="cdxIconAdd" /> `
                                                 + i18n.translations.dialogMenuAddTable +
                                             `</cdx-button>
@@ -132,6 +144,32 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
                                                 ` + i18n.translations.dialogInputRouteQID + `
                                             </template>
                                         </cdx-field>
+                                        <cdx-field :status="routeTitleStat" :messages="routeTitleMsg">
+                                            <cdx-text-input
+                                                v-model="routeTitle"
+                                                @input="routeTitleEntered"
+                                                @change="routeTitleChanged"
+                                            >
+                                            </cdx-text-input>
+                                            <template #label>
+                                                title
+                                            </template>
+                                            <template #description>
+                                                ` + i18n.translations.dialogInputRouteTitle + `
+                                            </template>
+                                        </cdx-field>
+                                        <cdx-field :status="routeColorStat" :messages="routeColorMsg">
+                                            <cdx-text-input
+                                                v-model="routeColor"
+                                            >
+                                            </cdx-text-input>
+                                            <template #label>
+                                                color
+                                            </template>
+                                            <template #description>
+                                                ` + i18n.translations.dialogInputRouteColor + `
+                                            </template>
+                                        </cdx-field>
                                     </div>
                                 </template>
                                 <template v-else>
@@ -144,7 +182,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
                                 </template>
                             </template>
                             <template v-if="tab.name === 'source'">
-                                <!---->
+                                <pre>` + item + `</pre>
                             </template>
                             <template v-if="tab.name === 'others'">
                                 <!---->
@@ -161,6 +199,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
                 CdxIcon,
                 CdxField,
                 CdxLookup,
+                CdxTextInput,
                 CdxButtonGroup
             },
             props: {
@@ -169,29 +208,28 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
                     default: true
                 }
             },
-            methods: {
-                addTable() {
-                    this.addMenuOpened = true
-                }
-            },
+            methods: {},
             setup() {
                 /* utils */
-                const fetchResults = ( searchTerm, offset ) => {
-                    const params = new URLSearchParams( {
+                const isColor = str => /^#[a-f0-9]{1,6}$/i.test(str);
+
+                const fetchResults = ( term, offset ) => {
+                    const params = new URLSearchParams({
                         origin: '*',
                         action: 'wbsearchentities',
                         format: 'json',
                         limit: '6',
                         props: 'url',
                         language: i18n.localizations.lang,
-                        search: searchTerm
-                    } );
+                        search: term
+                    });
                     if ( offset ) {
                         params.set( 'continue', String( offset ) );
                     }
-                    return fetch( `https://www.wikidata.org/w/api.php?${ params.toString() }` )
-                        .then( ( response ) => response.json() );
-                }
+                    return fetch(
+                        `https://www.wikidata.org/w/api.php?${ params.toString() }`
+                    ).then( ( re ) => re.json() );
+                };
                 /* utils end */
 
                 const open = ref( true );
@@ -206,6 +244,13 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
                 const routeQID = ref( null );
                 const routeQIDOptions = ref( [] );
                 const routeQIDCurrent = ref( "" );
+                const routeTitle = ref( "" );
+                const routeTitleAutomatic = ref( true );
+                const routeColor = ref( "" );
+                const routeColorStat = computed( () => isColor(routeColor.value) || routeColor.value === "" ? 'default' : 'unexpected' );
+                const routeColorMsg = {
+                    unexpected: i18n.translations.errorUnexpectedString
+                }
                 const menuConfig = {
                     visibleItemLimit: 6
                 };
@@ -230,7 +275,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
 
                 const routeQIDInput = value => {
                     routeQIDCurrent.value = value;
-        
+
                     if ( !value ) {
                         routeQIDOptions.value = [];
                         return;
@@ -252,39 +297,57 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
                                 value: result.id,
                                 description: result.description
                             };
-                        } );
+                        });
 
                         routeQIDOptions.value = results;
-                    }).catch( () => {
-                        routeQIDOptions.value = [];
-                    });
-                }
+                    }).catch( () => { routeQIDOptions.value = []; });
+
+                    if (routeTitleAutomatic.value) {
+                        routeTitle.value = routeQID.value
+                    }
+                };
 
                 const routeQIDLoadedMore = () => {
                     if ( !routeQIDCurrent.value ) {
                         return;
                     }
         
-                    fetchResults( routeQIDCurrent.value, routeQIDOptions.value.length )
-                        .then( data => {
-                            if ( !data.search || data.search.length === 0 ) {
-                                return;
-                            }
-        
-                            const results = data.search.map( result => {
-                                return {
-                                    label: result.label,
-                                    value: result.id,
-                                    description: result.description
-                                };
-                            });
-        
-                            // Update menuItems.
-                            const seen = new Set( menuItems.value.map( result => result.value ) );
-                            const dedupled = results.filter( result => !seen.has( result.value ) );
-                            routeQIDOptions.value.push( ...dedupled );
+                    fetchResults(
+                        routeQIDCurrent.value,
+                        routeQIDOptions.value.length
+                    ).then( data => {
+                        if ( !data.search || data.search.length === 0 ) {
+                            return;
+                        }
+    
+                        const results = data.search.map( result => {
+                            return {
+                                label: result.label,
+                                value: result.id,
+                                description: result.description
+                            };
                         });
+    
+                        // Update menuItems.
+                        const seen = new Set( menuItems.value.map( result => result.value ) );
+                        const dedupled = results.filter( result => !seen.has( result.value ) );
+                        routeQIDOptions.value.push( ...dedupled );
+                    });
                 }
+
+                const routeTitleEntered = () => {
+                    if (routeTitle.value !== "") {
+                        routeTitleAutomatic.value = false
+                    } else {
+                        routeTitleAutomatic.value = true
+                    }
+                };
+
+                const routeTitleChanged = () => {
+                    if (routeTitle.value === "") {
+                        routeTitle.value = routeQID.value
+                    }
+                };
 
                 const menuAction = menuButton => {
                     switch ( menuButton ) {
@@ -307,13 +370,19 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
                     routeQID,
                     routeQIDOptions,
                     routeQIDCurrent,
+                    routeColor,
+                    routeColorStat,
+                    routeColorMsg,
                     menuConfig,
+                    routeTitle,
                     editMenu,
                     cdxIconAdd,
                     cdxIconHelp,
                     insertStalist,
                     routeQIDInput,
                     routeQIDLoadedMore,
+                    routeTitleEntered,
+                    routeTitleChanged,
                     menuAction
                 };
             },
@@ -329,7 +398,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( ( require ) => {
                         name: 'source',
                         label: "ソース",
                         class: "voy-stalist-dialog-source",
-                        disabled: false
+                        disabled: (item === undefined)
                     },
                     {
                         name: 'others',
