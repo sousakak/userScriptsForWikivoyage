@@ -21,6 +21,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
             dialogButtonClose : "閉じる",
             dialogButtonPrimary : "挿入",
             dialogButtonDefault : "キャンセル",
+            dialogButtonAddTable : "追加",
             dialogMenuAddTable : "表を追加",
             dialogInputRouteQID : "路線のウィキデータID",
             dialogInputRouteTitle : "タイトルに表示する路線名",
@@ -29,14 +30,18 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
             labelButtonAdd : "追加",
             tooltipButtonAdd : "駅一覧を追加",
             errorUnknownMenuClicked : "不明なメニューボタンが押されました",
-            errorUnexpectedString : "予期せぬ文字列が指定されました"
+            errorUnexpectedString : "予期せぬ文字列が指定されました",
+            errorInvalidQID : "wikidataにウィキデータIDを指定してください",
+            errorUnknownTypeOfRouteItem : "指定されたウィキデータIDの分類プロパティに、既定の鉄道路線の分類に使われるアイテムが見つかりませんでした。"
         },
         localizations : {
             lang : 'ja',
             helpPage : 'https://ja.wikivoyage.org/wiki/テンプレート:駅一覧/doc',
-            visibleItemLimit : 6
+            visibleItemLimit : 6,
+            routeTypeList : ['Q728937', 'Q10928149', 'Q15141321', 'Q91908084'],
+            checkInputUsingWikidata : true
         }
-    };
+    }
 
     const { ref, computed } = require( 'vue' );
 	const {
@@ -83,6 +88,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
     `;
 
     var openDialog = (item = undefined) => {
+
         const dialogTitle = (item === undefined) ? i18n.translations.dialogTitleAdd : i18n.translations.dialogTitleEdit;
         
         const dialog = {
@@ -126,7 +132,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                                             `</cdx-button>
                                     </div>
                                     <div v-else>
-                                        <cdx-field>
+                                        <cdx-field :status="routeQIDStat" :messages="routeQIDMsg">
                                             <cdx-lookup
                                                 v-model:selected="routeQID"
                                                 :menu-items="routeQIDOptions"
@@ -135,7 +141,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                                                 @load-more="routeQIDLoadedMore"
                                             >
                                                 <template #no-results>
-                                                    ` + mw.message( 'Search-nonefound' ).text() + `
+                                                    ` + mw.message( 'search-nonefound' ).text() + `
                                                 </template>
                                             </cdx-lookup>
                                             <template #label>
@@ -171,6 +177,14 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                                                 ` + i18n.translations.dialogInputRouteColor + `
                                             </template>
                                         </cdx-field>
+                                        <cdx-button
+                                            action="progressive"
+                                            weight="primary"
+                                            @click="addNewStalist"
+                                            class="voy-stalist-stalist-button voy-stalist-stalist-button-right"
+                                        >
+                                            ` + i18n.translations.dialogButtonAddTable + `
+                                        </cdx-button>
                                     </div>
                                 </template>
                                 <template v-else>
@@ -213,6 +227,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
             setup() {
                 /* utils */
                 const isColor = str => /^#[a-f0-9]{1,6}$/i.test(str);
+                const isQID = str => /^[qQ]\d+$/.test(str);
 
                 const fetchResults = ( term, offset ) => {
                     const params = new URLSearchParams({
@@ -220,7 +235,6 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                         action: 'wbsearchentities',
                         format: 'json',
                         limit: String(i18n.localizations.visibleItemLimit),
-                        props: 'url',
                         language: i18n.localizations.lang,
                         search: term
                     });
@@ -242,16 +256,23 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                 const defaultAction = {
                     label: i18n.translations.dialogButtonDefault
                 };
+                const routeQIDStat = ref( 'default' )
+                const routeQIDMsg = computed( () => {
+                    return {
+                        error: i18n.translations.errorInvalidQID,
+                        warning: i18n.translations.errorUnknownTypeOfRouteItem
+                    }
+                });
                 const routeQID = ref( null );
                 const routeQIDOptions = ref( [] );
                 const routeQIDCurrent = ref( "" );
                 const routeTitle = ref( "" );
                 const routeTitleAutomatic = ref( true );
-                const routeColor = ref( "" );
                 const routeColorStat = computed( () => isColor(routeColor.value) || routeColor.value === "" ? 'default' : 'unexpected' );
                 const routeColorMsg = {
                     unexpected: i18n.translations.errorUnexpectedString
-                }
+                };
+                const routeColor = ref( "" );
                 const menuConfig = {
                     visibleItemLimit: i18n.localizations.visibleItemLimit
                 };
@@ -329,7 +350,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                             };
                         });
 
-                        const seen = new Set( menuItems.value.map( result => result.value ) );
+                        const seen = new Set( routeQIDOptions.value.map( result => result.value ) );
                         const dedupled = results.filter( result => !seen.has( result.value ) );
                         routeQIDOptions.value.push( ...dedupled );
                     });
@@ -346,6 +367,33 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                 const routeTitleChanged = () => {
                     if (routeTitle.value === "") {
                         routeTitle.value = routeQIDCurrent.value
+                    }
+                };
+
+                const addNewStalist = () => {
+                    if ( isQID( routeQID.value ) ) {
+                        if ( i18n.localizations.checkInputUsingWikidata && routeQIDStat.value !== 'warning' ) {
+                            let isRouteItem = false;
+                            const api = new mw.ForeignApi( 'https://www.wikidata.org/w/api.php' )
+                            api.get({
+                                action: 'wbgetentities',
+                                ids: routeQID.value,
+                                props: 'claims',
+                                languages: i18n.localizations.lang
+                            }).done( ( routeItem ) => {
+                                routeItem['entities'][routeQID.value]['claims']['P31'].forEach( (value) => {
+                                    console.log( typeof value['mainsnak']['datavalue']['value']['id'] )
+                                    console.log( value['mainsnak']['datavalue']['value']['id'] in i18n.localizations.routeTypeList );
+                                    if ( value['mainsnak']['datavalue']['value']['id'] in i18n.localizations.routeTypeList ) {
+                                        isRouteItem = true;
+                                    }
+                                    console.log( routeQIDStat.value )
+                                });
+                                routeQIDStat.value = isRouteItem ? 'default' : 'warning'
+                            });
+                        }
+                    } else {
+                        routeQIDStat.value = 'error';
                     }
                 };
 
@@ -367,12 +415,14 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                     open,
                     primaryAction,
                     defaultAction,
+                    routeQIDStat,
+                    routeQIDMsg,
                     routeQID,
                     routeQIDOptions,
                     routeQIDCurrent,
-                    routeColor,
                     routeColorStat,
                     routeColorMsg,
+                    routeColor,
                     menuConfig,
                     routeTitle,
                     editMenu,
@@ -383,6 +433,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                     routeQIDLoadedMore,
                     routeTitleEntered,
                     routeTitleChanged,
+                    addNewStalist,
                     menuAction
                 };
             },
@@ -496,20 +547,20 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
         .voy-stalist-edit {
             float: right;
         }
-
+        
         .voy-stalist-dialog {
             max-width: none;
             max-height: none;
             width: 100vw;
             height: 100vh;
         }
-
+        
+        .voy-stalist-stalist-button-right {
+            float: right;
+        }
+        
         .voy-stalist-dialog-menu {
             margin: 0 auto;
-        }
-
-        .voy-stalist-dialog-tab {
-            padding: 0.3em;
         }
     `;
 

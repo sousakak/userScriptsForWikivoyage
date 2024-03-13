@@ -9,6 +9,10 @@
     height: 100vh;
 }
 
+.voy-stalist-stalist-button-right {
+    float: right;
+}
+
 .voy-stalist-dialog-menu {
     margin: 0 auto;
 }
