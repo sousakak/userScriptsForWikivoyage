@@ -33,7 +33,8 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
         },
         localizations : {
             lang : 'ja',
-            helpPage : 'https://ja.wikivoyage.org/wiki/テンプレート:駅一覧/doc'
+            helpPage : 'https://ja.wikivoyage.org/wiki/テンプレート:駅一覧/doc',
+            visibleItemLimit : 6
         }
     };
 
@@ -218,7 +219,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                         origin: '*',
                         action: 'wbsearchentities',
                         format: 'json',
-                        limit: '6',
+                        limit: String(i18n.localizations.visibleItemLimit),
                         props: 'url',
                         language: i18n.localizations.lang,
                         search: term
@@ -252,7 +253,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                     unexpected: i18n.translations.errorUnexpectedString
                 }
                 const menuConfig = {
-                    visibleItemLimit: 6
+                    visibleItemLimit: i18n.localizations.visibleItemLimit
                 };
                 const editMenu = [
                     {
@@ -302,8 +303,8 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                         routeQIDOptions.value = results;
                     }).catch( () => { routeQIDOptions.value = []; });
 
-                    if (routeTitleAutomatic.value) {
-                        routeTitle.value = routeQID.value
+                    if (routeTitleAutomatic.value && routeQID.value !== null) {
+                        routeTitle.value = routeQIDCurrent.value
                     }
                 };
 
@@ -327,13 +328,12 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                                 description: result.description
                             };
                         });
-    
-                        // Update menuItems.
+
                         const seen = new Set( menuItems.value.map( result => result.value ) );
                         const dedupled = results.filter( result => !seen.has( result.value ) );
                         routeQIDOptions.value.push( ...dedupled );
                     });
-                }
+                };
 
                 const routeTitleEntered = () => {
                     if (routeTitle.value !== "") {
@@ -345,7 +345,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
 
                 const routeTitleChanged = () => {
                     if (routeTitle.value === "") {
-                        routeTitle.value = routeQID.value
+                        routeTitle.value = routeQIDCurrent.value
                     }
                 };
 
