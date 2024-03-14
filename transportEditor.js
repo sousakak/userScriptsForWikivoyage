@@ -32,16 +32,17 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
             errorUnknownMenuClicked : "不明なメニューボタンが押されました",
             errorUnexpectedString : "予期せぬ文字列が指定されました",
             errorInvalidQID : "wikidataにウィキデータIDを指定してください",
-            errorUnknownTypeOfRouteItem : "指定されたウィキデータIDの分類プロパティに、既定の鉄道路線の分類に使われるアイテムが見つかりませんでした。"
+            errorUnknownTypeOfRouteItem : "指定されたウィキデータIDの分類プロパティに、既定の鉄道路線の分類に使われるアイテムが見つかりませんでした",
+            errorOccuredToAddTable : "エラーを修正してから再度ボタンを押してください"
         },
         localizations : {
             lang : 'ja',
             helpPage : 'https://ja.wikivoyage.org/wiki/テンプレート:駅一覧/doc',
             visibleItemLimit : 6,
             routeTypeList : ['Q728937', 'Q10928149', 'Q15141321', 'Q91908084'],
-            checkInputUsingWikidata : true
+            checkInputStrictly : true
         }
-    }
+    };
 
     const { ref, computed } = require( 'vue' );
 	const {
@@ -177,6 +178,17 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                                                 ` + i18n.translations.dialogInputRouteColor + `
                                             </template>
                                         </cdx-field>
+                                        <cdx-message
+                                            v-if="errorOccuredToAddTable"
+                                            type="error"
+                                            inline
+                                            dismiss-button-label="` + i18n.translations.dialogButtonClose + `"
+                                            :fade-in="true"
+                                            :auto-dismiss="true"
+                                            :display-time="2400"
+                                        >
+                                            ` + i18n.translations.errorOccuredToAddTable + `
+                                        </cdx-message>
                                         <cdx-button
                                             action="progressive"
                                             weight="primary"
@@ -256,16 +268,20 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                 const defaultAction = {
                     label: i18n.translations.dialogButtonDefault
                 };
-                const routeQIDStat = ref( 'default' )
+                const routeQIDStat = ref( 'default' );
                 const routeQIDMsg = computed( () => {
                     return {
                         error: i18n.translations.errorInvalidQID,
                         warning: i18n.translations.errorUnknownTypeOfRouteItem
-                    }
+                    };
                 });
                 const routeQID = ref( null );
                 const routeQIDOptions = ref( [] );
                 const routeQIDCurrent = ref( "" );
+                const routeTitleStat = ref( 'default' );
+                const routeTitleMsg = computed( () => {
+                    return {};
+                });
                 const routeTitle = ref( "" );
                 const routeTitleAutomatic = ref( true );
                 const routeColorStat = computed( () => isColor(routeColor.value) || routeColor.value === "" ? 'default' : 'unexpected' );
@@ -290,6 +306,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                         ariaLabel: "Help"
                     }
                 ];
+                const errorOccuredToAddTable = ref( false );
 
                 const insertStalist = () => {
                     // pass
@@ -325,7 +342,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                     }).catch( () => { routeQIDOptions.value = []; });
 
                     if (routeTitleAutomatic.value && routeQID.value !== null) {
-                        routeTitle.value = routeQIDCurrent.value
+                        routeTitle.value = routeQIDCurrent.value;
                     }
                 };
 
@@ -341,7 +358,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                         if ( !data.search || data.search.length === 0 ) {
                             return;
                         }
-    
+
                         const results = data.search.map( result => {
                             return {
                                 label: result.label,
@@ -358,43 +375,56 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
 
                 const routeTitleEntered = () => {
                     if (routeTitle.value !== "") {
-                        routeTitleAutomatic.value = false
+                        routeTitleAutomatic.value = false;
                     } else {
-                        routeTitleAutomatic.value = true
+                        routeTitleAutomatic.value = true;
                     }
                 };
 
                 const routeTitleChanged = () => {
                     if (routeTitle.value === "") {
-                        routeTitle.value = routeQIDCurrent.value
+                        routeTitle.value = routeQIDCurrent.value;
                     }
                 };
 
-                const addNewStalist = () => {
-                    if ( isQID( routeQID.value ) ) {
-                        if ( i18n.localizations.checkInputUsingWikidata && routeQIDStat.value !== 'warning' ) {
-                            let isRouteItem = false;
-                            const api = new mw.ForeignApi( 'https://www.wikidata.org/w/api.php' )
-                            api.get({
-                                action: 'wbgetentities',
-                                ids: routeQID.value,
-                                props: 'claims',
-                                languages: i18n.localizations.lang
-                            }).done( ( routeItem ) => {
-                                routeItem['entities'][routeQID.value]['claims']['P31'].forEach( (value) => {
-                                    console.log( typeof value['mainsnak']['datavalue']['value']['id'] )
-                                    console.log( value['mainsnak']['datavalue']['value']['id'] in i18n.localizations.routeTypeList );
-                                    if ( value['mainsnak']['datavalue']['value']['id'] in i18n.localizations.routeTypeList ) {
-                                        isRouteItem = true;
+                const _addNewStalist = function* () {
+                    yield () => {
+                        if ( isQID( routeQID.value ) ) {
+                            if ( i18n.localizations.checkInputStrictly && routeQIDStat.value !== 'warning' ) {
+                                let isRouteItem = false;
+                                const api = new mw.ForeignApi( 'https://www.wikidata.org/w/api.php' );
+                                api.get({
+                                    action: 'wbgetentities',
+                                    ids: routeQID.value,
+                                    props: 'claims',
+                                    languages: i18n.localizations.lang
+                                }).done( ( routeItem ) => {
+                                    const instanceOf = routeItem.entities[routeQID.value].claims.P31;
+                                    if (instanceOf !== undefined) {
+                                        isRouteItem = instanceOf.some(
+                                            value => i18n.localizations.routeTypeList.includes(value.mainsnak.datavalue.value.id)
+                                        );
                                     }
-                                    console.log( routeQIDStat.value )
+                                    routeQIDStat.value = isRouteItem ? 'default' : 'warning';
                                 });
-                                routeQIDStat.value = isRouteItem ? 'default' : 'warning'
-                            });
+                            }
+                        } else {
+                            routeQIDStat.value = 'error';
                         }
-                    } else {
-                        routeQIDStat.value = 'error';
-                    }
+                    };
+                    return () => {
+                        if ([routeQIDStat.value, routeTitleStat.value, routeColorStat.value].includes( 'error' )) {
+                            errorOccuredToAddTable.value = true;
+                        } else {
+                            // pass
+                        }
+                    };
+                };
+
+                const addNewStalist = () => {
+                    const generator = _addNewStalist();
+                    generator.next().value();
+                    generator.next().value();
                 };
 
                 const menuAction = menuButton => {
@@ -420,12 +450,15 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                     routeQID,
                     routeQIDOptions,
                     routeQIDCurrent,
+                    routeTitleStat,
+                    routeTitleMsg,
+                    routeTitle,
                     routeColorStat,
                     routeColorMsg,
                     routeColor,
                     menuConfig,
-                    routeTitle,
                     editMenu,
+                    errorOccuredToAddTable,
                     cdxIconAdd,
                     cdxIconHelp,
                     insertStalist,
