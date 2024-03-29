@@ -16,6 +16,7 @@
 mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
     const i18n = {
         translations : {
+            templateName : "駅一覧",
             dialogTitleEdit : "駅一覧を編集",
             dialogTitleAdd : "駅一覧を追加",
             dialogButtonClose : "閉じる",
@@ -23,6 +24,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
             dialogButtonDefault : "キャンセル",
             dialogButtonAddTable : "追加",
             dialogMenuAddTable : "表を追加",
+            dialogInputOptional : "任意",
             dialogInputRouteQID : "路線のウィキデータID",
             dialogInputRouteTitle : "タイトルに表示する路線名",
             dialogInputRouteColor : "路線の色",
@@ -37,12 +39,17 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
         },
         localizations : {
             lang : 'ja',
+            outputLang : ['en'],
             helpPage : 'https://ja.wikivoyage.org/wiki/テンプレート:駅一覧/doc',
             visibleItemLimit : 6,
             routeTypeList : ['Q728937', 'Q10928149', 'Q15141321', 'Q91908084'],
-            checkInputStrictly : true
+            checkInputStrictly : true,
+            wikitextDefaultInline : false,
+            wikitextDefaultComment : true
         }
     };
+
+    console.log("i18n done")
 
     const { ref, computed } = require( 'vue' );
 	const {
@@ -54,7 +61,8 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
         CdxField,
         CdxLookup,
         CdxTextInput,
-        CdxButtonGroup
+        CdxButtonGroup,
+        CdxTextArea
     } = require( '@wikimedia/codex' );
     const cdxIconAdd = `
         <svg
@@ -86,12 +94,65 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                 <circle cx="10" cy="17" r="2"></circle>
             </g>
         </svg>
+    `,
+        cdxIconEdit = `
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+        >
+            <!---->
+            <g>
+                <path d="m16.77 8 1.94-2a1 1 0 000-1.41l-3.34-3.3a1 1 0 00-1.41 0L12 3.23zM1 14.25V19h4.75l9.96-9.96-4.75-4.75z"></path>
+            </g>
+        </svg>
     `;
 
-    var openDialog = (item = undefined) => {
+    console.log("icon done")
 
-        const dialogTitle = (item === undefined) ? i18n.translations.dialogTitleAdd : i18n.translations.dialogTitleEdit;
-        
+    var openDialog = (plaintext = null) => {
+        plaintext = ref( plaintext );
+        const wbapi = new mw.ForeignApi( 'https://www.wikidata.org/w/api.php' );
+        const dialogTitle = (plaintext.value === null) ? i18n.translations.dialogTitleAdd : i18n.translations.dialogTitleEdit;
+        let itemTable = { stations: [] }; // { title: String, wikidata: String, color: String, stations: Station[] }
+        const Station = class {
+            constructor(id, i, {image = null, name = null, tfr = null, spot = null}) {
+                this.index = i;
+                this.id = id; this.image = image; this.name = name; this.tfr = tfr; this.spot = spot;
+                this.autoname = false; // this.name automatically assigned
+                if (this.name === null) {
+                    wbapi.get({
+                        action: 'wbgetentities',
+                        ids: this.id,
+                        props: 'labels',
+                        languages: i18n.localizations.lang
+                    }).done(( label ) => {
+                        i18n.localizations.outputLang.push(i18n.localizations.lang).forEach( lang => {
+                            if (this.name === null && lang in label) {
+                                this.autoname = true;
+                                this.name = label[lang].value;
+                            }
+                        });
+                    });
+                }
+            }
+
+            get wikitext() {
+                let wikitext = "";
+                if (i18n.localizations.wikitextDefaultInline) wikitext = wikitext + "\n";
+                if (i18n.localizations.wikitextDefaultComment) wikitext = wikitext + "<!-- " + this.name + " -->";
+                wikitext = wikitext + "|" + this.name;
+                if (this.image) wikitext = wikitext + "|image" + this.index + "=" + this.image;
+                if (this.name && !(this.autoname)) wikitext = wikitext + "|name" + this.index + "=" + this.name;
+                if (this.tfr) wikitext = wikitext + "|tfr" + this.index + "=" + this.tfr;
+                if (this.spot) wikitext = wikitext + "|spot" + this.index + "=" + this.spot;
+                return wikitext;
+            }
+        };
+
         const dialog = {
             template: `
                 <cdx-dialog
@@ -117,7 +178,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                             class="voy-stalist-dialog-tab"
                         >
                             <template v-if="tab.name === 'content'">
-                                <template v-if="item === undefined">
+                                <template v-if="plaintext === null">
                                     <div
                                         class="voy-stalist-dialog-menu"
                                         style="
@@ -151,6 +212,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                                             <template #description>
                                                 ` + i18n.translations.dialogInputRouteQID + `
                                             </template>
+                                            <div style="display: none;" v-bind:data-warned="warnedQID"></div>
                                         </cdx-field>
                                         <cdx-field :status="routeTitleStat" :messages="routeTitleMsg">
                                             <cdx-text-input
@@ -176,6 +238,9 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                                             </template>
                                             <template #description>
                                                 ` + i18n.translations.dialogInputRouteColor + `
+                                            </template>
+                                            <template #help-text>
+                                                ` + i18n.translations.dialogInputOptional + `
                                             </template>
                                         </cdx-field>
                                         <cdx-message
@@ -209,7 +274,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                                 </template>
                             </template>
                             <template v-if="tab.name === 'source'">
-                                <pre>` + item + `</pre>
+                                <cdx-text-area v-model="plaintext" autosize readonly rows="5"></cdx-text-area>
                             </template>
                             <template v-if="tab.name === 'others'">
                                 <!---->
@@ -227,7 +292,8 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                 CdxField,
                 CdxLookup,
                 CdxTextInput,
-                CdxButtonGroup
+                CdxButtonGroup,
+                CdxTextArea
             },
             props: {
                 framed: {
@@ -235,7 +301,15 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                     default: true
                 }
             },
-            methods: {},
+            watch: {
+                plaintext: function (newone, oldone) {
+                    if (oldone === null) {
+                        for (i = 1; i < 3; i++) {
+                            this.tabsData[i].disabled = (newone === null); // this works on wiki!
+                        }
+                    }
+                }
+            },
             setup() {
                 /* utils */
                 const isColor = str => /^#[a-f0-9]{1,6}$/i.test(str);
@@ -256,6 +330,21 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                     return fetch(
                         `https://www.wikidata.org/w/api.php?${ params.toString() }`
                     ).then( ( re ) => re.json() );
+                };
+
+                const generateWikitext = () => {
+                    let newline = i18n.localizations.wikitextDefaultInline ? "" : "\n";
+
+                    let wikitext = "{{" + i18n.translations.templateName;
+                    if (itemTable.wikidata) wikitext = wikitext + "|wikidata=" + itemTable.wikidata;
+                    if (itemTable.title) wikitext = wikitext + "|title=" + itemTable.title;
+                    if (itemTable.color) wikitext = wikitext + "|color=" + itemTable.color;
+
+                    itemTable.stations.forEach( staclass => {
+                        wikitext = staclass.wikitext;
+                    });
+                    wikitext = wikitext + newline + "}}";
+                    return wikitext;
                 };
                 /* utils end */
 
@@ -292,6 +381,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                 const menuConfig = {
                     visibleItemLimit: i18n.localizations.visibleItemLimit
                 };
+                const warnedQID = ref( null );
                 const editMenu = [
                     {
                         value: 'edit',
@@ -387,13 +477,12 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                     }
                 };
 
-                const _addNewStalist = function* () {
-                    yield () => {
+                const addNewStalist = () => {
+                    new Promise( (resolve) => {
                         if ( isQID( routeQID.value ) ) {
-                            if ( i18n.localizations.checkInputStrictly && routeQIDStat.value !== 'warning' ) {
+                            if ( i18n.localizations.checkInputStrictly && warnedQID.value !== routeQID.value ) {
                                 let isRouteItem = false;
-                                const api = new mw.ForeignApi( 'https://www.wikidata.org/w/api.php' );
-                                api.get({
+                                wbapi.get({
                                     action: 'wbgetentities',
                                     ids: routeQID.value,
                                     props: 'claims',
@@ -406,25 +495,32 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                                         );
                                     }
                                     routeQIDStat.value = isRouteItem ? 'default' : 'warning';
+                                    if (routeQIDStat.value === 'warning') {
+                                        warnedQID.value = routeQID.value;
+                                    }
+                                    resolve();
                                 });
+                            } else if ( warnedQID.value === routeQID.value ) {
+                                routeQIDStat.value = 'default'; // if save is pressed again with a warning, try saving
+                                resolve();
+                            } else {
+                                resolve();
                             }
                         } else {
                             routeQIDStat.value = 'error';
                         }
-                    };
-                    return () => {
+                        console.log("plaintext.value: " + plaintext.value);
+                    }).then( () => {
                         if ([routeQIDStat.value, routeTitleStat.value, routeColorStat.value].includes( 'error' )) {
                             errorOccuredToAddTable.value = true;
-                        } else {
-                            // pass
+                        } else if (!([routeQIDStat.value, routeTitleStat.value, routeColorStat.value].includes( 'warning' ))) {
+                            console.log("routeQIDStat.value: " + routeQIDStat.value);
+                            itemTable["wikidata"] = routeQID.value || null;
+                            itemTable["title"] = routeTitle.value || null;
+                            itemTable["color"] = routeColor.value || null;
+                            plaintext.value = generateWikitext();
                         }
-                    };
-                };
-
-                const addNewStalist = () => {
-                    const generator = _addNewStalist();
-                    generator.next().value();
-                    generator.next().value();
+                    });
                 };
 
                 const menuAction = menuButton => {
@@ -441,7 +537,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                 };
 
                 return {
-                    item,
+                    plaintext,
                     open,
                     primaryAction,
                     defaultAction,
@@ -457,6 +553,7 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                     routeColorMsg,
                     routeColor,
                     menuConfig,
+                    warnedQID,
                     editMenu,
                     errorOccuredToAddTable,
                     cdxIconAdd,
@@ -482,13 +579,13 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                         name: 'source',
                         label: "ソース",
                         class: "voy-stalist-dialog-source",
-                        disabled: (item === undefined)
+                        disabled: (this.plaintext === null)
                     },
                     {
                         name: 'others',
                         label: "その他",
                         class: "voy-stalist-dialog-others",
-                        disabled: (item === undefined)
+                        disabled: (this.plaintext === null)
                     }
                 ];
                 const currentTab = tabsData[0].name;
@@ -505,6 +602,8 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
         $( 'body' ).prepend( '<div class="voy-stalist-dialog-area"></div>' );
         Vue.createMwApp( dialog ).mount( '.voy-stalist-dialog-area' );
     };
+
+    console.log("open dialog done");
 
     if ( $(".voy-stalist").length ) {
         const editStalist = {
@@ -526,21 +625,6 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
                 CdxIcon
             },
             setup() {
-                const cdxIconEdit = `
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        xmlns:xlink="http://www.w3.org/1999/xlink"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 20 20"
-                        aria-hidden="true"
-                    >
-                        <!---->
-                        <g>
-                            <path d="m16.77 8 1.94-2a1 1 0 000-1.41l-3.34-3.3a1 1 0 00-1.41 0L12 3.23zM1 14.25V19h4.75l9.96-9.96-4.75-4.75z"></path>
-                        </g>
-                    </svg>`;
-
                 const onClick = () => {
                     openDialog('edit');
                 };
@@ -573,6 +657,8 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
         Vue.createMwApp( addStalist ).mount( '.mw-editsection' );
     }
 
+    console.log("hook done");
+
     /*** For the test ***/
     var styleTag = document.createElement('style');
     document.head.appendChild(styleTag);
@@ -586,6 +672,10 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
             max-height: none;
             width: 100vw;
             height: 100vh;
+        }
+        
+        .voy-stalist-dialog .cdx-tabs__content {
+            padding-top: 0.8em;
         }
         
         .voy-stalist-stalist-button-right {
@@ -605,4 +695,6 @@ mw.loader.using([ 'vue', '@wikimedia/codex' ]).then( require => {
         e.preventDefault();
         openDialog($(e.currentTarget).data( 'stalist' ));
     });
+
+    console.log("test code done");
 });

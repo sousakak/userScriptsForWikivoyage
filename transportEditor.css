@@ -9,6 +9,10 @@
     height: 100vh;
 }
 
+.voy-stalist-dialog .cdx-tabs__content {
+    padding-top: 0.8em;
+}
+
 .voy-stalist-stalist-button-right {
     float: right;
 }
