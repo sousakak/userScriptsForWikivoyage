@@ -1,0 +1,11 @@
+
+== CSSクラス ==
+* <code>voy-vCard-dialog-page</code>
+: also has a more specific class of the form <code>voy-vCard-dialog-page-''(page name)''</code>.
+* <code>voy-vCard-dialog-fieldset</code>
+: also has a more specific class of the form <code>voy-vCard-dialog-''(page name)''</code>.
+* <code>voy-vCard-dialog-field</code>
+* <code>voy-vCard-dialog-image</code>
+* <code>voy-vCard-dialog-image-description</code>
+* <code>voy-vCard-dialog-image-element</code>
+* <code>voy-vCard-dialog-image-caption</code>

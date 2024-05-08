@@ -56,55 +56,15 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
         otherLabel: "その他",
         otherIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Italian_traffic_signs_-_icona_informazioni_%28figura_II_108%29.svg/22px-Italian_traffic_signs_-_icona_informazioni_%28figura_II_108%29.svg.png"
     };
-    const TYPES = {
-        go: [],
-        religion: [],
-        nature: [],
-        see: [
-            {
-                label: "円形劇場",
-                value: "amphitheater"
-            },
-            {
-                label: "用水路",
-                value: "aqueduct"
-            },
-            {
-                label: "遺跡",
-                value: "archaeological_site"
-            },
-            {
-                label: "建築",
-                value: "architecture"
-            },
-            {
-                label: "アーカイブ",
-                value: "archive"
-            },
-            {
-                label: "芸術作品",
-                value: "artwork"
-            },
-            {
-                label: "バラック",
-                value: "barracks"
-            },
-            {
-                label: "船舶昇降機",
-                value: "boat_lift"
-            }
-        ],
-        do: [],
-        buy: [],
-        eat: [],
-        drink: [],
-        sleep: [],
-        health: [],
-        populated: [],
-        view: [],
-        area: [],
-        other: []
-    };
+    const TYPES = window.ListingEditor.types || [];
+    let TYPESBYGROUP;
+    for (let type of TYPES) {
+        if (TYPESBYGROUP[type.group] === undefined) {
+            TYPESBYGROUP[type.group] = [type];
+        } else {
+            TYPESBYGROUP[type.group].push(type);
+        }
+    }
 
     const currentLastEditDate = () => {
         // return the date as "2015-01-15"
@@ -141,7 +101,7 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
                         @input="onInput"
                     >
                         <template #menu-item="{ menuItem }">
-                            <strong>{{ menuItem.label }}</strong> (` + i18n.lookupValueLabel + `: {{ menuItem.value }})
+                            <strong>{{ menuItem.label }}</strong> (` + i18n.lookupValueLabel + `: {{ menuItem.type }})
                         </template>
                     </cdx-lookup>
                     <cdx-checkbox
@@ -181,14 +141,14 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
 
                 const insertVCard = () => {
                     open.value = false;
-                    post = post_text
-                    pre = "{{vCard | type=" + selection.value + "\n| name="
+                    post = post_text;
+                    pre = "{{vCard | type=" + selection.type + "\n| name=";
                     if (inlined.value) {
-                        post = post.replace(/\n/g, " ")
-                        pre = pre.replace(/\n/g, " ")
+                        post = post.replace(/\n/g, " ");
+                        pre = pre.replace(/\n/g, " ");
                     }
                     if (bulleted.value) {
-                        pre = "* " + pre
+                        pre = "* " + pre;
                     }
                     $.wikiEditor.modules.toolbar.fn.doAction(
                         context,
@@ -200,7 +160,7 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
                             }
                         }
                     );
-                }
+                };
 
                 const onInput = ( value ) => {
                     if ( !value ) {
@@ -208,12 +168,12 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
                         return;
                     }
                     if ( value ) {
-                        menuItems.value = TYPES[group].filter( ( item ) =>
+                        menuItems.value = TYPESBYGROUP[group].filter( ( item ) =>
                             item.label.includes( value )
                         );
                         primaryAction.disabled = false;
                     }
-                }
+                };
 
                 return {
                     open,
@@ -231,7 +191,7 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
         };
         $( 'body' ).prepend( '<div class="voy-buttonsVCard-dialog voy-buttonsVCard"></div>' );
         Vue.createMwApp( dialog ).mount( '.voy-buttonsVCard-dialog' );
-    }
+    };
 
     mw.hook( 'wikiEditor.toolbarReady' ).add( ( $textarea ) => {
         $textarea.wikiEditor( 'addToToolbar', {
