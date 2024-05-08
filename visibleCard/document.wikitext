@@ -1,5 +1,28 @@
+This script adds a link to open a dialog which provides interface for quick view and edit depending on the user's settings.
 
-== CSSクラス ==
+This script was inspired by the Listing Editor used in many language Wikivoyages and Listing Info in the German Wikivoyage. To use this, your Wikivoyage need to use [[Template:VCard|vCard]] instead of Listing templates. For a document of vCard, please see the German version.
+
+== How to use ==
+There are three modes: <code>view</code>, <code>mini</code>, <code>edit</code>. You can change modes on the settings page, which can be opened from the settings button in the lower left corner of the dialog.
+
+=== View mode ===
+
+=== Mini mode ===
+
+=== Edit mode ===
+
+== How to install ==
+
+== CSS classes ==
+The visibleCard adds following CSS classes:
+; In content
+* <code>voy-editsection</code>
+: Same as the one [[Help:Listing Editor|Listing Editor]] add
+* <code>voy-vCard-dialog-link</code>
+* <code>listing-dialog-button</code>
+; In dialog
+* <code>voy-vCard-dialog</code>
+* <code>voy-vCard-dialog-menu</code>
 * <code>voy-vCard-dialog-page</code>
 : also has a more specific class of the form <code>voy-vCard-dialog-page-''(page name)''</code>.
 * <code>voy-vCard-dialog-fieldset</code>
