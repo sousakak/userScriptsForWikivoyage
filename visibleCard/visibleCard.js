@@ -949,7 +949,7 @@ mw.loader.using( [ 'oojs', 'oojs-ui', 'mediawiki.ForeignApi', 'mediawiki.user' ]
                 } else {
                     return 'attr';
                 }
-            }
+            };
 
             for ( let param in Config.DATAS ) {
                 const source = Config.DATAS[param];
@@ -974,7 +974,7 @@ mw.loader.using( [ 'oojs', 'oojs-ui', 'mediawiki.ForeignApi', 'mediawiki.user' ]
             console.log( values )
 
             return values;
-        }
+        };
 
         /**
          * Format row values retrieved from DOM or source text in wikitext.
@@ -993,7 +993,7 @@ mw.loader.using( [ 'oojs', 'oojs-ui', 'mediawiki.ForeignApi', 'mediawiki.user' ]
                     return Array.isArray( param ) ? 'array' : 'object';
                 }
                 return typeof( param );
-            }
+            };
 
             for ( let param in rowValues ) {
                 let rowValue = rowValues[param];
@@ -1021,7 +1021,7 @@ mw.loader.using( [ 'oojs', 'oojs-ui', 'mediawiki.ForeignApi', 'mediawiki.user' ]
             }
 
             return values;
-        }
+        };
 
         /**
          * Create dialog class inheriting {OO.ui.ProcessDialog}, set content into it,
@@ -1119,7 +1119,7 @@ mw.loader.using( [ 'oojs', 'oojs-ui', 'mediawiki.ForeignApi', 'mediawiki.user' ]
             const values = formatValues( rowValues );
             openDialog( new vCard( values ) );
         });
-    }
+    };
 
     /**
      * Initializer function that adds a link to open the dialog and some CSS classes
@@ -1149,7 +1149,7 @@ mw.loader.using( [ 'oojs', 'oojs-ui', 'mediawiki.ForeignApi', 'mediawiki.user' ]
 
         const addOpenLink = function() {
             $( 'span.listing-metadata-items' ).append( dialogLink.clone( true ) );
-        }
+        };
 
         /**
             Given an editable heading, examine it to determine what section index
@@ -1193,7 +1193,7 @@ mw.loader.using( [ 'oojs', 'oojs-ui', 'mediawiki.ForeignApi', 'mediawiki.user' ]
         deferred.resolve( [$('.voy-vCard-dialog-link'), 'button'] );
 
         return deferred.promise();
-    }
+    };
 
     mw.util.addCSS(`
     .voy-vCard-dialog:not([data-mode="edit"])
