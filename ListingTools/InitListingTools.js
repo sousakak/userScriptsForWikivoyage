@@ -1,19 +1,19 @@
 //<nowiki>
-/**	initListingTools v1.0, 2023-02-26
+/**	initListingTools v2.0-ja, 2024-07-19
 	Initialization of listing editor and listing info
 	Original author: Roland Unger
     Additional contributor: Tmv
 	Support of desktop and mobile views
-	Documentation: https://de.wikivoyage.org/wiki/Wikivoyage:initListingTools.js
+	Documentation: in preparation
 	License: GPL-2.0+, CC-by-sa 3.0
 */
 
-module.exports = ( function( $, mw ) {
+module.exports = await ( async ( $, mw ) => {
 	'use strict';
 
-	var initListingTools = function() {
+	let initListingTools = (() => {
 		// options for module import
-		var options = [
+		let options = [
 			{
 				page: 'Module:Marker utilities/Types', // name of module to import
 				index: 'type',                         // name of key field
@@ -109,8 +109,8 @@ module.exports = ( function( $, mw ) {
 		// data: data array from module
 		// item: single item from options array
 		// isDefault: data are defaults from options array
-		var analyzeAndCopyData = function( data, item, isDefault ) {
-			var i, dataItem;
+		let analyzeAndCopyData = ( data, item, isDefault ) => {
+			let i, dataItem;
 
 			// adding missing label from index
 			for ( i = 0; i < data.length; i++ ) {
@@ -127,7 +127,7 @@ module.exports = ( function( $, mw ) {
 				}
 			}
 			// sorting by label in alphabetic order
-			data.sort( function( a, b ) {
+			data.sort( ( a, b ) => {
 				if ( item.sortKey ) {
 					a = a[ item.sortKey ] || a[ item.label ];
 					b = b[ item.sortKey ] || b[ item.label ];
@@ -152,14 +152,14 @@ module.exports = ( function( $, mw ) {
             return data;
 		};
         // item: item from options array
-		var getDataFromSingleModule = function( item ) {
+		let getDataFromSingleModule = item => {
 			return $.ajax( {
 				type: 'GET',
 				url: mw.util.wikiScript( '' ),
 				data: { title: item.page, action: 'raw', ctype: 'text/plain' },
 				timeout: 3000,
 				dataType: 'text'
-			} ).then( function( data ) {
+			} ).then(  data => {
 				data = data.replace( /\-\-.*\n/g, '' )      // remove comments
 					.replace( /[\s+\t+]/gm, ' ' );          // remove line breaks and tabs
 
@@ -179,14 +179,14 @@ module.exports = ( function( $, mw ) {
 						.replace( /([,\{]) *([\w\-]+)( *=)/g, '$1 "$2":' );
 
 				// check if data string is valid JSON
-				var isDefault = false, json, fmtData;
+				let isDefault = false, json, fmtData;
 				try {
 					json = JSON.parse( data );
 				} catch ( e ) {
 					// invalid JSON
 					json = item.defaultArray;
 					isDefault = true;
-					var pos = e.message.match( /column (\d+) of/i )[ 1 ];
+					let pos = e.message.match( /column (\d+) of/i )[ 1 ];
 					pos = data.substring( pos - 10, pos + 10 );
 					console.log( e.message + ', data: ' + item.page + ', text: ' + pos );
 				}
@@ -195,48 +195,41 @@ module.exports = ( function( $, mw ) {
 				else
                     fmtData = json;
 					window.ListingEditor[ item.arrayName ] = json;
-                var dataObj = {}; dataObj[ item.arrayName ] = fmtData;
+                let dataObj = {}; dataObj[ item.arrayName ] = fmtData;
                 return dataObj;
-			} ).catch( function() {
-				var json = item.defaultArray, fmtData;
+			} ).catch( () => {
+				let json = item.defaultArray, fmtData;
 				if ( item.index !== '' )
                     fmtData = analyzeAndCopyData( json, item, true );
 				else
-                    fmtData = json;
+                    fmtData = json;initListingToolsvar
 					window.ListingEditor[ item.arrayName ] = json;
-                var dataObj = {}; dataObj[ item.arrayName ] = fmtData;
+                let dataObj = {}; dataObj[ item.arrayName ] = fmtData;
                 return dataObj;
 			} );
 		};
 
-		var getDataFromModules = function() {
-			var promiseArray = [], i, allData = {};
+		let getDataFromModules = async () => {
+			let i, allData = {};
 
 			// mw already exists but maybe not the ListingEditor object
 			if ( typeof window.ListingEditor === 'undefined' )
 				window.ListingEditor = {};
 
 			for ( i = 0; i < options.length; i++ ) 
-				promiseArray.push( getDataFromSingleModule( options[ i ] ) );
+                Object.assign(allData, await getDataFromSingleModule( options[ i ] ));
 
-			// wait for getting all external data
-            if ( typeof Promise !== 'undefined' ) 
-                Promise.all( promiseArray ).then( function( data ) {
-                    for ( const dataUnit of data ) {
-                        Object.assign(allData, dataUnit);
-                    }
-                } );
 			return allData;
 		};
 
-		var init = function() {
-			return getDataFromModules();
+		let init = async () => {
+			return await getDataFromModules();
 		};
 
 		return { init: init };
-	}();
+	})();
 
-	return initListingTools.init();
+	return await initListingTools.init();
 
-} ( jQuery, mediaWiki ) );
+})( jQuery, mediaWiki );
 // </nowiki>

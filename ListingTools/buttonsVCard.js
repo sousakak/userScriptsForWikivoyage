@@ -13,9 +13,21 @@
 //   >>mw.loader.load('//ja.wikivoyage.org/w/index.php?title=User:Tmv/custom/ButtonsVCard.js&action=raw&ctype=text/javascript');
 /******************************************************************************/
 
-mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
+mw.loader.using([ 'ext.gadget.InitListingTools', 'vue', '@wikimedia/codex' ]).then( ( require ) => {
     const { ref } = require( 'vue' );
 	const { CdxLookup, CdxDialog, CdxCheckbox } = require( '@wikimedia/codex' );
+	let vCardConfig = require( 'ext.gadget.InitListingTools' );
+	if ( !vCardConfig ) {
+		const req = new XMLHttpRequest();
+        req.addEventListener("load", (e) => {
+            let script = e.target.responseText.replace( "module.exports = ", "" );
+            vCardConfig = eval(script);
+        });
+        req.open( 'GET', mw.config.get("wgServer") + mw.config.get( "wgScript" )
+            + "?title=MediaWiki:Gadget-InitListingTools.js&action=raw&ctype=text/javascript" );
+        req.send();
+	}
+	
     const i18n = {
         dialogTitle: "タイプを検索",
         dialogSubtitle: "$1のタイプを検索中",
@@ -24,6 +36,7 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
         cancelButtonLabel: "中止",
         lookupPlaceholder: "日本語で入力",
         lookupValueLabel: "入力",
+        lookupNoResults: "一致する結果はありません",
         inlinedCheckboxLabel: "インライン",
         bulletedCheckboxLabel: "箇条書き",
 
@@ -56,9 +69,11 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
         otherLabel: "その他",
         otherIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Italian_traffic_signs_-_icona_informazioni_%28figura_II_108%29.svg/22px-Italian_traffic_signs_-_icona_informazioni_%28figura_II_108%29.svg.png"
     };
-    const TYPES = window.ListingEditor.types || [];
-    let TYPESBYGROUP;
+    const TYPES = require( 'ext.gadget.InitListingTools' ).types;
+    let TYPESBYGROUP = {};
+    console.log( TYPES );
     for (let type of TYPES) {
+    	type.value = type.type;
         if (TYPESBYGROUP[type.group] === undefined) {
             TYPESBYGROUP[type.group] = [type];
         } else {
@@ -103,6 +118,9 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
                         <template #menu-item="{ menuItem }">
                             <strong>{{ menuItem.label }}</strong> (` + i18n.lookupValueLabel + `: {{ menuItem.type }})
                         </template>
+                        <template #no-results>
+                        	` + i18n.lookupNoResults + `
+                        </template>
                     </cdx-lookup>
                     <cdx-checkbox
                         v-model="inlined"
@@ -136,13 +154,13 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
                         menuConfig = {
                             visibleItemLimit: null
                         },
-                        inlined = ref( false ),
+                        inlined = ref( true ),
                         bulleted = ref( true );
 
                 const insertVCard = () => {
                     open.value = false;
                     post = post_text;
-                    pre = "{{vCard | type=" + selection.type + "\n| name=";
+                    pre = "{{vCard | type=" + selection.value + "\n| name=";
                     if (inlined.value) {
                         post = post.replace(/\n/g, " ");
                         pre = pre.replace(/\n/g, " ");
@@ -167,12 +185,10 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
                         menuItems.value = [];
                         return;
                     }
-                    if ( value ) {
-                        menuItems.value = TYPESBYGROUP[group].filter( ( item ) =>
-                            item.label.includes( value )
-                        );
-                        primaryAction.disabled = false;
-                    }
+                    menuItems.value = TYPESBYGROUP[group].filter( ( item ) =>
+                        item.label.includes( value )
+                    );
+                    primaryAction.disabled = false;
                 };
 
                 return {
@@ -258,7 +274,7 @@ mw.loader.using(['vue', '@wikimedia/codex' ]).then( ( require ) => {
                         }
                     }
                 },
-                do: {
+                'do': {
                     label: i18n.doLabel,
                     type: 'button',
                     icon: i18n.doIcon,
