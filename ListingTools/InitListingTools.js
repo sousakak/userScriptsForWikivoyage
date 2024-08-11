@@ -8,7 +8,7 @@
 	License: GPL-2.0+, CC-by-sa 3.0
 */
 
-module.exports = await ( async ( $, mw ) => {
+let table = await ( async ( $, mw ) => {
 	'use strict';
 
 	let initListingTools = (() => {
@@ -202,7 +202,7 @@ module.exports = await ( async ( $, mw ) => {
 				if ( item.index !== '' )
                     fmtData = analyzeAndCopyData( json, item, true );
 				else
-                    fmtData = json;initListingToolsvar
+                    fmtData = json;initListingToolsvar;
 					window.ListingEditor[ item.arrayName ] = json;
                 let dataObj = {}; dataObj[ item.arrayName ] = fmtData;
                 return dataObj;
@@ -232,4 +232,6 @@ module.exports = await ( async ( $, mw ) => {
 	return await initListingTools.init();
 
 })( jQuery, mediaWiki );
+
+module.exports = table;
 // </nowiki>
