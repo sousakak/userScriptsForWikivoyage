@@ -155,13 +155,13 @@ var wvListingEditor = ( function( mw, $ ) {
 
 		phone:    /^(\+[1-9]|[\d\(])([\dA-Z \-\(\)\.]+[\dA-Z ])(( ([Ee][Xx][Tt]\.? |[Aa][Pp][Pp]\.? |x)\d+)?)( *\([^\)]+\))?$/,
 		email:    /^[^@^\(^\)\s]+@[^@^\(^\)\s]+\.[^@^\(^\)\s]+( *\([^\)]+\))?$/,
-		skype:    /^[a-z][a-z0-9\.,\-_]{5,31}(\?(add|call|chat|sendfile|userinfo|voicemail))?( *\([^\)]+\))?$/,
-		facebook: /^(https:\/\/www\.facebook\.com\/.+|(?!.*\.(?:com|net))[a-z\d.]{5,}|[-.\w\d]+\-\d+)$/i,
-		flickr:   /^(https:\/\/www\.flickr\.com\/.+|\d{5,11}@N\d{2})$/,
-		instagram:/^(https:\/\/www\.instagram\.com\/.+|explore\/locations\/[1-9]\d{0,15}|[0-9a-z_][0-9a-z._]{0,28}[0-9a-z_])$/,
-		tiktok:   /^(https:\/\/www\.tiktok\.com\/@.+|[0-9A-Za-z_][0-9A-Za-z_.]{1,23})$/i,
-		twitter:  /^(https:\/\/twitter\.com\/.+|[0-9a-z_]{1,15})$/i,
-		youtube:  /^(https:\/\/www\.youtube\.com\/.+|UC[-_0-9A-Za-z]{21}[AQgw]|@[A-Za-z0-9_\-\.]{3,30})$/,
+		// skype:    /^[a-z][a-z0-9\.,\-_]{5,31}(\?(add|call|chat|sendfile|userinfo|voicemail))?( *\([^\)]+\))?$/,
+		// facebook: /^(https:\/\/www\.facebook\.com\/.+|(?!.*\.(?:com|net))[a-z\d.]{5,}|[-.\w\d]+\-\d+)$/i,
+		// flickr:   /^(https:\/\/www\.flickr\.com\/.+|\d{5,11}@N\d{2})$/,
+		// instagram:/^(https:\/\/www\.instagram\.com\/.+|explore\/locations\/[1-9]\d{0,15}|[0-9a-z_][0-9a-z._]{0,28}[0-9a-z_])$/,
+		// tiktok:   /^(https:\/\/www\.tiktok\.com\/@.+|[0-9A-Za-z_][0-9A-Za-z_.]{1,23})$/i,
+		// twitter:  /^(https:\/\/twitter\.com\/.+|[0-9a-z_]{1,15})$/i,
+		// youtube:  /^(https:\/\/www\.youtube\.com\/.+|UC[-_0-9A-Za-z]{21}[AQgw]|@[A-Za-z0-9_\-\.]{3,30})$/,
 
 		image:    new RegExp( '^(?!([Ff]ile|[Ii]mage|' + translate( 'image' ) + '):)' + '.+\.(tif|tiff|gif|png|jpg|jpeg|jpe|webp|xcf|ogg|ogv|svg|pdf|stl|djvu|webm|mpg|mpeg)$', 'i' ),
 		commonscat: new RegExp( '^(?!(category|' + translate( 'commonscat' ) + '):)' + '.+$', 'i' ),
@@ -178,13 +178,13 @@ var wvListingEditor = ( function( mw, $ ) {
 		tollfree:    { regex: REGEX.phone, m: 'validationTollfree', wd: false, sep: Config.MISC.sep },
 		fax:         { regex: REGEX.phone, m: 'validationFax', wd: true, sep: Config.MISC.sep },
 		email:       { regex: REGEX.email, m: 'validationEmail', wd: true, sep: Config.MISC.sep },
-		skype:       { regex: REGEX.skype, m: 'validationSkype', wd: true, sep: Config.MISC.skypeSep },
-		facebook:    { regex: REGEX.facebook, m: 'validationFacebook', wd: true },
-		flickr:      { regex: REGEX.flickr, m: 'validationFlickr', wd: true },
-		instagram:   { regex: REGEX.instagram, m: 'validationInstagram', wd: true },
-		tiktok:      { regex: REGEX.tiktok, m: 'validationTiktok', wd: true },
-		twitter:     { regex: REGEX.twitter, m: 'validationTwitter', wd: true },
-		youtube:     { regex: REGEX.youtube, m: 'validationYoutube', wd: true },
+		// skype:       { regex: REGEX.skype, m: 'validationSkype', wd: true, sep: Config.MISC.skypeSep },
+		// facebook:    { regex: REGEX.facebook, m: 'validationFacebook', wd: true },
+		// flickr:      { regex: REGEX.flickr, m: 'validationFlickr', wd: true },
+		// instagram:   { regex: REGEX.instagram, m: 'validationInstagram', wd: true },
+		// tiktok:      { regex: REGEX.tiktok, m: 'validationTiktok', wd: true },
+		// twitter:     { regex: REGEX.twitter, m: 'validationTwitter', wd: true },
+		// youtube:     { regex: REGEX.youtube, m: 'validationYoutube', wd: true },
 		image:       { regex: REGEX.image, m: 'validationImage', wd: true },
 		commonscat:  { regex: REGEX.commonscat, m: 'validationCategory', wd: false },
 		zoom:        { regex: REGEX.zoom, m: 'validationZoom', wd: false },
@@ -229,12 +229,12 @@ var wvListingEditor = ( function( mw, $ ) {
 			mobile: { cl: 'addCC' },
 			tollfree: { cl: 'addCC' },
 			fax: { cl: 'addCC addLocalCC' },
-			facebook: { cl: 'addLink' },
-			flickr: { cl: 'addLink' },
-			instagram: { cl: 'addLink' },
-			tiktok: { cl: 'addLink' },
-			twitter: { cl: 'addLink' },
-			youtube: { cl: 'addLink' },
+			// facebook: { cl: 'addLink' },
+			// flickr: { cl: 'addLink' },
+			// instagram: { cl: 'addLink' },
+			// tiktok: { cl: 'addLink' },
+			// twitter: { cl: 'addLink' },
+			// youtube: { cl: 'addLink' },
 
 			price: { cl: 'addCurrencies' },
 			subtype: { tp: 'select', multiple: true,
@@ -2858,7 +2858,8 @@ var wvListingEditor = ( function( mw, $ ) {
 				text: sectionText,
 				summary: summary,
 				captchaid: cid,
-				captchaword: answer
+				captchaword: answer,
+				tags: 'Listing Editor'
 			};
 			if ( minor )
 				editPayload.minor = 'true';
@@ -2984,9 +2985,9 @@ var wvListingEditor = ( function( mw, $ ) {
 						l = maskPipes( l ).replace( /\|/g, '{{!}}' ).replace( /\x00/g, '|' );
 						// handle punctuation marks
 						if ( Config.OPTIONS.withoutPunctuation.includes( parameter ) )
-							l = l.replace( /[.,;!?]+$/, '' );
-						if ( parameter === 'description' && l !== '' && !l.match( /[.!?]$/ ) )
-							l = l + '.';
+							l = l.replace( /[。、；！？]+$/, '' );
+						if ( parameter === 'description' && l !== '' && !l.match( /[。！？]$/ ) )
+							l = l + '。';
 					}
 					listing[ parameter ] = l;
 				}
