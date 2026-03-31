@@ -13,10 +13,10 @@
 //   >>mw.loader.load('//ja.wikivoyage.org/w/index.php?title=User:Tmv/custom/ButtonsVCard.js&action=raw&ctype=text/javascript');
 /******************************************************************************/
 
-mw.loader.using([ 'ext.gadget.getVCardSetting', 'mediawiki.util', 'vue', '@wikimedia/codex' ]).then( require => {
+mw.loader.using([ 'mediawiki.util', 'vue', '@wikimedia/codex' ]).then( require => {
     const { ref } = require( 'vue' );
 	const { CdxLookup, CdxDialog, CdxCheckbox } = require( '@wikimedia/codex' );
-	let vCardConfig = require( 'ext.gadget.getVCardSetting' ) || window.voy.VCardSetting;
+	let vCardConfig = window.voy.VCardSetting;
 
     const i18n = {
         dialogTitle: "タイプを検索",

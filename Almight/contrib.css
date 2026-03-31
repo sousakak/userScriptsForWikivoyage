@@ -1,0 +1,11 @@
+.mw-special-ContributionsSpecialPage .oo-ui-fieldsetLayout-group:not(:first-child) {
+  max-width: unset;
+}
+.mw-special-ContributionsSpecialPage .rainbow-cp-tabbox > .oo-ui-menuLayout-content {
+  border: #eaecf0 1px solid;
+  border-top: none;
+}
+.mw-special-ContributionsSpecialPage .rainbow-cp-tabbox .rainbow-cp-revdel-wrapper .oo-ui-radioOptionWidget {
+  display: inline-block;
+  margin-right: 12px;
+}/*# sourceMappingURL=contrib.css.map */

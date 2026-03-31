@@ -1,0 +1,330 @@
+{
+    "Config": {
+        "i18n": {},
+        "helpLink": "https://ja.wikivoyage.org/w/index.php?title=ヘルプ:visibleCard"
+    },
+    "CATEGORIES": [
+        {
+            "value": "access",
+            "label": "Access",
+            "active": true,
+            "params": {
+                "name": {
+                    "title": "Name",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "name-local": {
+                    "title": "Local Name",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "name-latin": {
+                    "title": "Latin Name",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "name-map": {
+                    "title": "Name on Map",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "alt": {
+                    "title": "Alt",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "comment": {
+                    "title": "Comment",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "address": {
+                    "title": "Address",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "address-local": {
+                    "title": "Local Address",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "directions": {
+                    "title": "Directions",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "directions-local": {
+                    "title": "Directions in Local Language",
+                    "widget": "input",
+                    "placeholder": true
+                }
+            }
+        },
+        {
+            "value": "entree",
+            "label": "Entree",
+            "active": true,
+            "params": {
+                "hours": {
+                    "title": "Hours",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "checkin": {
+                    "title": "Check-in",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "checkout": {
+                    "title": "Check-out",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "payment": {
+                    "title": "Payment",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "price": {
+                    "title": "Price",
+                    "widget": "input",
+                    "placeholder": true
+                }
+            }
+        },
+        {
+            "value": "images",
+            "label": "Images",
+            "active": true,
+            "params": {
+                "image": {
+                    "title": "Image",
+                    "widget": "image"
+                },
+                "commonscat": {
+                    "title": "Category on Commons",
+                    "widget": "lookup",
+                    "placeholder": true,
+                    "query": "commons"
+                }
+            }
+        },
+        {
+            "value": "map",
+            "label": "Map",
+            "active": true,
+            "params": {
+                "lat": {
+                    "title": "Latitude",
+                    "widget": "input",
+                    "type": "number",
+                    "max": 90,
+                    "min": -90,
+                    "placeholder": true
+                },
+                "long": {
+                    "title": "Longitude",
+                    "widget": "input",
+                    "type": "number",
+                    "max": 180,
+                    "min": -180,
+                    "placeholder": true
+                },
+                "zoom": {
+                    "title": "Zoom",
+                    "widget": "input",
+                    "type": "number",
+                    "max": 19,
+                    "min": 0,
+                    "placeholder": true
+                }
+            }
+        },
+        {
+            "value": "contact",
+            "label": "Contact",
+            "active": true,
+            "params": {
+                "url": {
+                    "title": "Url",
+                    "widget": "input",
+                    "placeholder": true,
+                    "validate": "\/^https?:\\\/\\\/[-_.!~*\\'()a-zA-Z0-9;\\\/?:\\@&=+\\$,%#\\u3000-\\u30FE\\u4E00-\\u9FA0\\uFF01-\\uFFE3]+\\/?$\/"
+                },
+                "phone": {
+                    "title": "Phone number",
+                    "widget": "input",
+                    "placeholder": true,
+                    "validate": "\/^\\+?[0-9\\s]{1,4}([-\\s]?[0-9]{1,4})*(\\uff08.+?\\uff09)?([,\\u3001]\\s?\\+?[0-9]{1,4}(\\-[0-9]{1,4})*)*$\/"
+                },
+                "tollfree": {
+                    "title": "Tollfree",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "mobile": {
+                    "title": "Mobile Phone Number",
+                    "widget": "input",
+                    "placeholder": true,
+                    "validate": "\/^0[5789]0[-\\s]?\\d{4}[-\\s]?\\d{4}$\/"
+                },
+                "fax": {
+                    "title": "Fax",
+                    "widget": "input",
+                    "placeholder": true
+                },
+                "email": {
+                    "title": "Email Address",
+                    "widget": "input",
+                    "placeholder": true,
+                    "validate": "\/^[\\w\\+\\-]+(.[\\w\\+\\-]+)*@([a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\\.)+[a-zA-Z]{2,}$\/"
+                }
+            }
+        },
+        {
+            "value": "others",
+            "label": "Others",
+            "active": true,
+            "params": {
+                "subtype": {
+                    "widget": "select",
+                    "options": [
+                        {
+                            "data": "budget",
+                            "label": "お手頃"
+                        },
+                        {
+                            "data": "midrange",
+                            "label": "中級店"
+                        },
+                        {
+                            "data": "upmarket",
+                            "label": "高級店"
+                        }
+                    ],
+                    "placeholder": true
+                },
+                "wikidata": {
+                    "widget": "lookup",
+                    "placeholder": true,
+                    "query": "wikidata"
+                },
+                "description": {
+                    "widget": "input",
+                    "type": "multiline",
+                    "placeholder": true
+                },
+                "lastedit": {
+                    "widget": "input",
+                    "placeholder": true
+                }
+            }
+        },
+        {
+            "value": "meta",
+            "label": "Meta",
+            "active": true,
+            "params": {
+                "type": {
+                    "widget": "input"
+                },
+                "auto": {
+                    "widget": "input"
+                },
+                "show": {
+                    "widget": "input"
+                },
+                "group": {
+                    "widget": "input"
+                },
+                "map-group": {
+                    "widget": "input"
+                },
+                "before": {
+                    "widget": "input"
+                },
+                "styles": {
+                    "widget": "input"
+                },
+                "copy-marker": {
+                    "widget": "input"
+                },
+                "country": {
+                    "widget": "input"
+                },
+                "status": {
+                    "widget": "input"
+                },
+                "section-from": {
+                    "widget": "input"
+                }
+            }
+        }
+    ],
+    "PARAMS": {
+        "name": "",
+        "name-local": "",
+        "name-latin": "",
+        "name-map": "",
+        "alt": "",
+        "comment": "",
+        "type": [],
+        "subtype": [],
+        "address": "",
+        "address-local": "",
+        "directions": "",
+        "directions-local": "",
+        "lat": "",
+        "long": "",
+        "zoom": "",
+        "wikidata": "",
+        "auto": "",
+        "commons": "",
+        "url": "",
+        "show": "",
+        "group": "",
+        "map-group": "",
+        "image": "",
+        "phone": "",
+        "tollfree": "",
+        "mobile": "",
+        "fax": "",
+        "email": "",
+        "hours": "",
+        "checkin": "",
+        "checkout": "",
+        "payment": "",
+        "price": "",
+        "description": "",
+        "before": "",
+        "lastedit": "",
+        "styles": "",
+        "copy-marker": "",
+        "country": "",
+        "status": "",
+        "section-from": "",
+        "frequency": "",
+        "date": "",
+        "month": "",
+        "year": "",
+        "enddate": "",
+        "endmonth": "",
+        "endyear": "",
+        "location": ""
+    },
+    "QUERIES": {
+        "commons": {
+            "url": "//commons.wikimedia.org/w/api.php",
+            "params": {
+                "action": "query",
+                "format": "json",
+                "list": "search",
+                "formatversion": 2,
+                "srnamespace": 6,
+                "srlimit": 10
+            },
+            "termParam": "srsearch"
+        }
+    }
+}
