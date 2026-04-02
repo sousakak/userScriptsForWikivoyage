@@ -469,6 +469,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     :use-close-button="true"
                     :primary-action="primaryAction"
                     :default-action="defaultAction"
+                    :renderInPlace="true"
                     @primary="onPrimaryAction"
                     @default="open = true"
                     class="voy-vCard-dialog"
@@ -729,9 +730,6 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
             }
         };
     };
-    const container = document.createElement( 'div' );
-    container.classList.add( [ 'voy-vCard-dialog-container' ] );
-    document.body.append( container );
 
     class VCard {
         /**
@@ -744,7 +742,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
          */
         constructor( params, elem = null ) {
             /** @type {Object} */
-            this.params = Object.assign( PARAMS, params );
+            this.params = Object.assign( {}, PARAMS, params );
             /** @type {Element} */
             this.elem = elem;
 
@@ -762,7 +760,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
             let button = document.createElement( 'button' );
             button.setAttribute( 'title', '' );
             button.textContent = '詳細';
-            button.addEventListener( 'click', e => {
+            button.addEventListener( 'click', _ => {
                 this.openDialog()
             });
             link.append( button );
@@ -770,6 +768,9 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
         };
 
         openDialog() {
+            const container = document.createElement( 'div' );
+            container.classList.add( [ 'voy-vCard-dialog-container' ] );
+            document.getElementById( 'mw-teleport-target' ).append( container );
             createMwApp( dialog( this ) )
                 .component( 'CdxButton', Codex.CdxButton )
                 .component( 'CdxDialog', Codex.CdxDialog )
@@ -777,7 +778,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                 .component( 'CdxIcon', Codex.CdxIcon )
                 .component( 'CdxLookup', Codex.CdxLookup )
                 .component( 'CdxTextInput', Codex.CdxTextInput )
-                .mount( document.getElementById( 'mw-teleport-target' ) );
+                .mount( container );
         };
 
         /**
@@ -786,7 +787,22 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
          * @returns {VCard} Instance of VCard class.
          */
         static parse( elem ) {
-            let params = PARAMS;
+            let params = {};
+            for (const child of elem.children) {
+                child.classList?.forEach( c => {
+                    const match = c.match(/^listing-(\D+)$/)?.[1]; // this can be undefined
+                    if (!match) return;
+                    if ( Object.keys( PARAMS ).includes( match ) ) {
+                        params[match] = child.textContent;
+                    }
+                });
+            }
+            for (const data in elem.dataset) {
+                if ( // If the data attribute is included in PARAMS
+                    Object.keys( PARAMS )
+                        .includes( data.replace( /([A-Z])/g, "-$1" ).toLowerCase() )
+                ) params[data.replace( /([A-Z])/g, "-$1" ).toLowerCase()] = elem.dataset[data];
+            }
             return new VCard( params, elem );
         };
     };
@@ -796,7 +812,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
         const cardElems = body.getElementsByClassName( 'listing-edit' );
         /** @type {Array<VCard>} */
         let cards = [];
-        for (const cardElem of cardElems) {
+        for (let cardElem of cardElems) {
             cards.push( VCard.parse( cardElem ) );
         }
     });
