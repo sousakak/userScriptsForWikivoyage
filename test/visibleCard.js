@@ -685,7 +685,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     if ( offset ) params.continue = String( offset );
                     return new mw.ForeignApi( QUERIES[query].url )
                         .get( params )
-                        .then( re => { console.log( 'Lookup results:', re.query.search ); return re.query.search; } );
+                        .then( re => re.query.search );
                 };
 
                 const open = ref( true ),
@@ -699,7 +699,6 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     onUpdateLookupValue = function( query, name, value ) {
                         fetchLookupResults( query, value )
                             .then( data => {
-                                console.log( 'data: ', data );
                                 if ( input[name] !== value ) return;
 
                                 // Reset the menu items if there are no results.
