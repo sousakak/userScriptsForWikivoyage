@@ -225,13 +225,15 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
             params: {
                 'image': {
                     title: 'Image',
-                    widget: 'image',
+                    widget: 'lookup',
+                    placeholder: true,
+                    query: 'commons'
                 },
                 'commonscat': {
                     title: 'Category on Commons',
                     widget: 'lookup',
                     placeholder: true,
-                    query: 'commons'
+                    query: 'commonscat'
                 }
             }
         },
@@ -313,6 +315,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
             active: true,
             params: {
                 'subtype': {
+                    title: 'Subtype',
                     widget: 'select',
                     options: [
                         {
@@ -331,16 +334,19 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     placeholder: true
                 },
                 'wikidata': {
+                    title: 'Wikidata',
                     widget: 'lookup',
                     placeholder: true,
                     query: 'wikidata'
                 },
                 'description': {
+                    title: 'Description',
                     widget: 'input',
                     type: 'multiline',
                     placeholder: true
                 },
                 'lastedit': {
+                    title: 'Last Edit',
                     widget: 'input',
                     placeholder: true
                 }
@@ -352,36 +358,47 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
             active: true,
             params: {
                 'type': {
+                    title: 'Type',
                     widget: 'input'
                 },
                 'auto': {
+                    title: 'Auto',
                     widget: 'input'
                 },
                 'show': {
+                    title: 'Show',
                     widget: 'input'
                 },
                 'group': {
+                    title: 'Group',
                     widget: 'input'
                 },
                 'map-group': {
+                    title: 'Map Group',
                     widget: 'input'
                 },
                 'before': {
+                    title: 'Before',
                     widget: 'input'
                 },
                 'styles': {
+                    title: 'Styles',
                     widget: 'input'
                 },
                 'copy-marker': {
+                    title: 'Copy Marker',
                     widget: 'input'
                 },
                 'country': {
+                    title: 'Country',
                     widget: 'input'
                 },
                 'status': {
+                    title: 'Status',
                     widget: 'input'
                 },
                 'section-from': {
+                    title: 'Section From',
                     widget: 'input'
                 }
             }
@@ -405,7 +422,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
         zoom: '',
         wikidata: '',
         auto: '',
-        commons: '',
+        commonscat: '',
         url: '',
         show: '',
         group: '',
@@ -449,6 +466,18 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                 list: 'search',
                 formatversion: 2,
                 srnamespace: 6,
+                srlimit: 10
+            },
+            termParam: 'srsearch'
+        },
+        commonscat: {
+            url: '//commons.wikimedia.org/w/api.php',
+            params: {
+                action: 'query',
+                format: 'json',
+                list: 'search',
+                formatversion: 2,
+                srnamespace: 14,
                 srlimit: 10
             },
             termParam: 'srsearch'
@@ -539,19 +568,32 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                                             {{ option.guide }}
                                         </template>
                                     </cdx-field>
-                                    <cdx-lookup
-                                        v-model:selected="lookupSelection"
-                                        v-model:input-value="input[name]"
-                                        :menu-items="lookupItems"
-                                        :menu-config="option.config"
-                                        @update:input-value="onUpdateLookupValue(option.query, name)"
-                                        @load-more="onLookupLoadMore(option.query, name)"
+                                    <cdx-field
                                         v-if="option.widget === 'lookup'"
                                     >
-                                        <template #no-results>
-                                            No results found.
+                                        <cdx-lookup
+                                            v-model:selected="lookupSelection"
+                                            v-model:input-value="input[name]"
+                                            :menu-items="lookupItems[name] ? lookupItems[name] : []"
+                                            :menu-config="option.config"
+                                            @update:input-value="onUpdateLookupValue(option.query, name, $event)"
+                                            @load-more="onLookupLoadMore(option.query, name)"
+                                            v-if="option.widget === 'lookup'"
+                                        >
+                                            <template #no-results>
+                                                No results found.
+                                            </template>
+                                        </cdx-lookup>
+                                        <template #label>
+                                            {{ option.title }}
                                         </template>
-                                    </cdx-lookup>
+                                        <template #description>
+                                            {{ option.desc }}
+                                        </template>
+                                        <template #help-text>
+                                            {{ option.guide }}
+                                        </template>
+                                    </cdx-field>
                                 </template>
                             </div>
                         </template>
@@ -618,6 +660,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                             v-tooltip="'Publish your edit'"
                             @click="onPublishAction"
                             class="voy-vCard-dialog__button voy-vCard-dialog__button__publish"
+                            disabled
                         >
                             <cdx-icon :icon="cdxIconRecentChanges"></cdx-icon>
                             <span class="voy-vCard-dialog__buttonLabel">Publish</span>
@@ -640,9 +683,9 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     let params = QUERIES[query].params;
                     params[QUERIES[query].termParam] = term;
                     if ( offset ) params.continue = String( offset );
-                    return new mw.ForeignApi( query )
+                    return new mw.ForeignApi( QUERIES[query].url )
                         .get( params )
-                        .done( re => re.query.search );
+                        .then( re => { console.log( 'Lookup results:', re.query.search ); return re.query.search; } );
                 };
 
                 const open = ref( true ),
@@ -650,36 +693,33 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     page = ref( CATEGORIES[0].value ),
                     input = reactive( vCard.params ),
                     lookupSelection = ref( null ),
-                    lookupItems = ref( [] );
+                    lookupItems = reactive( {} );
 
                 const onPrimaryAction = function() {},
-                    onUpdateLookupValue = function( query, name ) {
-                        return function( value ) {
-                            fetchLookupResults( query, value )
-                                .then( data => {
-                                    if ( input[name].value !== value ) {
-                                        return;
-                                    }
+                    onUpdateLookupValue = function( query, name, value ) {
+                        fetchLookupResults( query, value )
+                            .then( data => {
+                                console.log( 'data: ', data );
+                                if ( input[name] !== value ) return;
 
-                                    // Reset the menu items if there are no results.
-                                    if ( !data.search || data.search.length === 0 ) {
-                                        lookupItems.value = [];
-                                        return;
-                                    }
+                                // Reset the menu items if there are no results.
+                                if ( !data || data.length === 0 ) {
+                                    lookupItems[name] = [];
+                                    return;
+                                }
 
-                                    // Build an array of menu items.
-                                    const results = data.search.map( result => ( {
-                                        label: result.title,
-                                        value: result.title
-                                    }));
+                                // Build an array of menu items.
+                                const results = data.map( result => ( {
+                                    label: result.title,
+                                    value: result.title
+                                }));
 
-                                    // Update menuItems.
-                                    lookupItems.value = results;
-                                })
-                                .catch( () => {
-                                    lookupItems.value = [];
-                                });
-                        };
+                                // Update menuItems.
+                                lookupItems[name] = results;
+                            })
+                            .catch( () => {
+                                lookupItems[name] = [];
+                            });
                     },
                     onLookupLoadMore = function( query, name ) {
                         return function( value ) {
@@ -848,6 +888,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
 .voy-vCard-dialog__index {
     padding-right: 24px;
     border-right: 1px solid var(--border-color-subtle, #c8ccd1);
+    flex-grow: 0;
 }
 
 .voy-vCard-dialog__index__menu {
@@ -857,6 +898,8 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
 
 .voy-vCard-dialog__page {
     padding: 8px 24px;
+    flex-grow: 1;
+    overflow-y: scroll;
 }
 
 .voy-vCard-dialog .cdx-dialog__footer {
