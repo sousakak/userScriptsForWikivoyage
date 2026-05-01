@@ -123,13 +123,17 @@ const func =  () => {
                 name: 'currencies'
             }
         ];
-        for (const scribunto of scribuntos) {
-            fetchData( scribunto ).done( data => {
+
+        const promises = scribuntos.map( scribunto => {
+            return fetchData(scribunto).then( data => {
                 setting[scribunto.name] = data;
             });
-        }
-        window.voy = Object.assign( window.voy, { VCardSetting: setting } );
-        return setting;
+        });
+
+        return Promise.all(promises).then(() => {
+            window.voy = Object.assign(window.voy, { VCardSetting: setting });
+            return setting;
+        });
     });
 };
 
