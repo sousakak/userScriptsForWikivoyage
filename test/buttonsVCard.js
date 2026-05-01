@@ -169,33 +169,33 @@ func().then( vCardConfig => {
             bulletedCheckboxLabel: "箇条書き",
 
             goLabel: "行く",
-            goIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Pictograms-nps-airport.svg/22px-Pictograms-nps-airport.svg.png",
+            goIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Pictograms-nps-airport.svg/120px-Pictograms-nps-airport.svg.png",
             religionLabel: "信仰",
-            religionIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Japanese_Map_symbol_%28Shrine%29.svg/22px-Japanese_Map_symbol_%28Shrine%29.svg.png",
+            religionIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Japanese_Map_symbol_(Shrine).svg/250px-Japanese_Map_symbol_(Shrine).svg.png",
             natureLabel: "自然",
-            natureIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/8/82/Pictograms-nps-land-wildlife_viewing.svg/22px-Pictograms-nps-land-wildlife_viewing.svg.png",
+            natureIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/8/82/Pictograms-nps-land-wildlife_viewing.svg/250px-Pictograms-nps-land-wildlife_viewing.svg.png",
             seeLabel: "観る",
-            seeIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Italian_traffic_signs_-_icona_museo.svg/22px-Italian_traffic_signs_-_icona_museo.svg.png",
+            seeIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Italian_traffic_signs_-_icona_museo.svg/250px-Italian_traffic_signs_-_icona_museo.svg.png",
             doLabel: "する",
-            doIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/3/30/Pictograms-nps-bicycle_trail-2.svg/22px-Pictograms-nps-bicycle_trail-2.svg.png",
+            doIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/3/30/Pictograms-nps-bicycle_trail-2.svg/250px-Pictograms-nps-bicycle_trail-2.svg.png",
             buyLabel: "買う",
-            buyIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Italian_traffic_signs_-_icona_supermercato.svg/22px-Italian_traffic_signs_-_icona_supermercato.svg.png",
+            buyIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Italian_traffic_signs_-_icona_supermercato.svg/250px-Italian_traffic_signs_-_icona_supermercato.svg.png",
             eatLabel: "食べる",
-            eatIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Italian_traffic_signs_-_icona_ristorante.svg/22px-Italian_traffic_signs_-_icona_ristorante.svg.png",
+            eatIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Italian_traffic_signs_-_icona_ristorante.svg/250px-Italian_traffic_signs_-_icona_ristorante.svg.png",
             drinkLabel: "飲む",
-            drinkIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Verre_cocktail.svg/22px-Verre_cocktail.svg.png",
+            drinkIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Verre_cocktail.svg/500px-Verre_cocktail.svg.png",
             sleepLabel: "泊まる",
-            sleepIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/2/25/Pictograms-nps-lodging.svg/22px-Pictograms-nps-lodging.svg.png",
+            sleepIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/2/25/Pictograms-nps-lodging.svg/250px-Pictograms-nps-lodging.svg.png",
             healthLabel: "健康",
-            healthIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Pictograms-nps-first_aid.svg/22px-Pictograms-nps-first_aid.svg.png",
+            healthIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Pictograms-nps-first_aid.svg/250px-Pictograms-nps-first_aid.svg.png",
             populatedLabel: "都市",
-            populatedIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/1/15/Bootstrap_geo-alt.svg/22px-Bootstrap_geo-alt.svg.png",
+            populatedIcon: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Bootstrap_geo-alt.svg/250px-Bootstrap_geo-alt.svg.png",
             viewLabel: "眺める",
-            viewIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/0/07/Pictograms-nps-misc-camera.svg/22px-Pictograms-nps-misc-camera.svg.png",
+            viewIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/0/07/Pictograms-nps-misc-camera.svg/250px-Pictograms-nps-misc-camera.svg.png",
             areaLabel: "地域",
-            areaIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Bootstrap_compass.svg/22px-Bootstrap_compass.svg.png",
+            areaIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Bootstrap_compass.svg/250px-Bootstrap_compass.svg.png",
             otherLabel: "その他",
-            otherIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Italian_traffic_signs_-_icona_informazioni_%28figura_II_108%29.svg/22px-Italian_traffic_signs_-_icona_informazioni_%28figura_II_108%29.svg.png"
+            otherIcon: "//upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Italian_traffic_signs_-_icona_informazioni_%28figura_II_108%29.svg/250px-Italian_traffic_signs_-_icona_informazioni_%28figura_II_108%29.svg.png"
         };
         const TYPES = vCardConfig.types;
         let TYPESBYGROUP = {};
@@ -346,7 +346,7 @@ func().then( vCardConfig => {
                 sections: {
                     listings: {
                         type: 'toolbar',
-                        label: "List"
+                        label: "リスト"
                     }
                 }
             });
