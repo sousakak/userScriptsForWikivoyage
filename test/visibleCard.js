@@ -268,6 +268,10 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
             label: 'Others',
             active: true,
             params: {
+                'type': {
+                    title: 'Type',
+                    widget: 'input'
+                },
                 'subtype': {
                     title: 'Subtype',
                     widget: 'select',
@@ -293,15 +297,15 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     placeholder: true,
                     query: 'wikidata'
                 },
+                'lastedit': {
+                    title: 'Last Edit',
+                    widget: 'input',
+                    placeholder: true
+                },
                 'description': {
                     title: 'Description',
                     widget: 'input',
                     type: 'multiline',
-                    placeholder: true
-                },
-                'lastedit': {
-                    title: 'Last Edit',
-                    widget: 'input',
                     placeholder: true
                 }
             }
@@ -311,10 +315,6 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
             label: 'Meta',
             active: true,
             params: {
-                'type': {
-                    title: 'Type',
-                    widget: 'input'
-                },
                 'auto': {
                     title: 'Auto',
                     widget: 'input'
