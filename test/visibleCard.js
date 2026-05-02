@@ -1,57 +1,3 @@
-/**
- * Fetch the setting data from the specified lua module.
- * @param {Object} scribunto       Information about the target lua module.
- * @param {String} scribunto.title Title of the target lua module.
- * @param {RegExp} scribunto.start To remove from start
- * @param {RegExp} scribunto.end   To remove at the end
- * @param {String} scribunto.name  Name of the new array in json format
- * @returns {jQuery.Promise}
- */
-const fetchData = scribunto => {
-    const params = {
-        action: 'query',
-        prop: 'revisions',
-        titles: scribunto.title,
-        formatversion: 2,
-        rvprop: 'content',
-        rvslots: 'main',
-        rvlimit: 1
-    };
-    return new mw.Api().get( params ).then( data => {
-        let content = data.query.pages[0].revisions[0].slots.main.content,
-            result;
-
-        // Borrowed some RegExp below from https://w.wiki/HXXm
-        // '=' within string will break this
-        content = content.replace( /\-\-.*\n/g, '' ) // remove comments
-            .replace( /\s+/gm, '' )          // remove line breaks and tabs
-            .replace( scribunto.start, '' )  // delete beginning
-            .replace( scribunto.end, '' )    // delete end
-            .replace(                        // remove square brackets from keys
-                /\[\"([^\[\]\"]+?)\"\]\=/gm,
-                (_, p) => '\"' + p + '\":'
-            )
-            .replace(                        // enclose keys in double quotes
-                /([^\,\=\"\{\}]+?)\=/gm,
-                (_, p) => '\"' + p + '\":'
-            )
-            .replace(                        // replace arrays
-                /\{(\"[^\"]+?\"\,)*?\"[^\"]+?\"\}/g,
-                m => m.replace('{', '[').replace('}', ']')
-            );
-
-        try {
-            result = JSON.parse( "{" + content + "}" );
-            return result;
-        } catch ( e ) {
-            console.warn( e );
-            return fetch( '//raw.githubusercontent.com/sousakak/userScriptsForWikivoyage/refs/heads/master/ListingTools/vCardSetting.json' )
-                .then( r => r.json() )
-                .then( r => { result = r; });
-        }
-    });
-};
-
 (() => {
     'use strict';
 
@@ -229,13 +175,19 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     title: 'Image',
                     widget: 'lookup',
                     placeholder: true,
-                    query: 'commons'
+                    query: 'commons',
+                    config: {
+                        visibleItemLimit: 6
+                    }
                 },
                 'commonscat': {
                     title: 'Category on Commons',
                     widget: 'lookup',
                     placeholder: true,
-                    query: 'commonscat'
+                    query: 'commonscat',
+                    config: {
+                        visibleItemLimit: 6
+                    }
                 }
             }
         },
@@ -498,10 +450,8 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     v-model:open="open"
                     title="visibleCard"
                     :use-close-button="true"
-                    :primary-action="primaryAction"
                     :default-action="defaultAction"
                     :renderInPlace="true"
-                    @primary="onPrimaryAction"
                     @default="open = true"
                     class="voy-vCard-dialog"
                 >
@@ -574,12 +524,13 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                                         v-if="option.widget === 'lookup'"
                                     >
                                         <cdx-lookup
-                                            v-model:selected="lookupSelection"
+                                            v-model:selected="lookupSelection[name]"
                                             v-model:input-value="input[name]"
                                             :menu-items="lookupItems[name] ? lookupItems[name] : []"
                                             :menu-config="option.config"
                                             @update:input-value="onUpdateLookupValue(option.query, name, $event)"
-                                            @load-more="onLookupLoadMore(option.query, name)"
+                                            @load-more="onLoadLookupMore(option.query, name)"
+                                            @update:selected="onLookupSelection"
                                             v-if="option.widget === 'lookup'"
                                         >
                                             <template #no-results>
@@ -682,9 +633,10 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                         console.error( new Error( `Unsupported query: ${query}` ) );
                         return [];
                     }
-                    let params = QUERIES[query].params;
+                    let params = { ...QUERIES[query].params };
                     params[QUERIES[query].termParam] = term;
-                    if ( offset ) params.continue = String( offset );
+                    if ( offset ) params.sroffset = offset;
+
                     return new mw.ForeignApi( QUERIES[query].url )
                         .get( params )
                         .then( re => re.query.search );
@@ -694,49 +646,63 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     panel = ref( 'main' ),
                     page = ref( CATEGORIES[0].value ),
                     input = reactive( vCard.params ),
-                    lookupSelection = ref( null ),
+                    lookupSelection = reactive( {} ),
                     lookupItems = reactive( {} );
 
-                const onPrimaryAction = function() {},
-                    onUpdateLookupValue = function( query, name, value ) {
-                        fetchLookupResults( query, value )
-                            .then( data => {
-                                if ( input[name] !== value ) return;
+                const onUpdateLookupValue = function( query, name, value ) {
+                    fetchLookupResults( query, value )
+                        .then( data => {
+                            if ( input[name] !== value ) return;
 
-                                // Reset the menu items if there are no results.
-                                if ( !data || data.length === 0 ) {
-                                    lookupItems[name] = [];
-                                    return;
-                                }
-
-                                // Build an array of menu items.
-                                const results = data.map( result => ( {
-                                    label: result.title,
-                                    value: result.title
-                                }));
-
-                                // Update menuItems.
-                                lookupItems[name] = results;
-                            })
-                            .catch( () => {
+                            // Reset the menu items if there are no results.
+                            if ( !data || data.length === 0 ) {
                                 lookupItems[name] = [];
-                            });
-                    },
-                    onLookupLoadMore = function( query, name ) {
-                        return function( value ) {
-                            //
-                        };
-                    },
-                    onSettingsAction = function() {},
-                    onHelpAction = function() {
-                        window.open( Config.helpLink, '_blank' );
-                    },
-                    onNextAction = function() {
-                        panel.value = 'preview';
-                    },
-                    onPublishAction = function() {
-                        //
-                    };
+                                return;
+                            }
+
+                            // Build an array of menu items.
+                            const results = data.map( result => ( {
+                                label: result.title,
+                                value: result.title
+                            }));
+
+                            // Update menuItems.
+                            lookupItems[name] = results;
+                        })
+                        .catch( () => {
+                            lookupItems[name] = [];
+                        });
+                },
+                onLoadLookupMore = function( query, name ) {
+                    if ( !input[name] ) return;
+
+                    fetchLookupResults( query, input[name], lookupItems[name].length )
+                        .then( data => {
+                            if ( !data || data.length === 0 ) {
+                                return;
+                            }
+
+                            const results = data.map( result => ( {
+                                label: result.title,
+                                value: result.title
+                            }));
+
+                            lookupItems[name] = lookupItems[name].concat( results );
+                        });
+                },
+                onLookupSelection = function() {
+                    // lookupSelection
+                },
+                onSettingsAction = function() {},
+                onHelpAction = function() {
+                    window.open( Config.helpLink, '_blank' );
+                },
+                onNextAction = function() {
+                    panel.value = 'preview';
+                },
+                onPublishAction = function() {
+                    //
+                };
 
                 // Copied from https://doc.wikimedia.org/codex/latest/icons/all-icons.html
                 const cdxIconClose = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><g><path d="m4.34 2.93 12.73 12.73-1.41 1.41L2.93 4.35z"></path><path d="M17.07 4.34 4.34 17.07l-1.41-1.41L15.66 2.93z"></path></g></svg>`,
@@ -754,9 +720,8 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     lookupSelection,
                     lookupItems,
                     CATEGORIES,
-                    onPrimaryAction,
                     onUpdateLookupValue,
-                    onLookupLoadMore,
+                    onLoadLookupMore,
                     onSettingsAction,
                     onHelpAction,
                     onNextAction,
