@@ -678,9 +678,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
 
                     fetchLookupResults( query, input[name], lookupItems[name].length )
                         .then( data => {
-                            if ( !data || data.length === 0 ) {
-                                return;
-                            }
+                            if ( !data || data.length === 0 ) return;
 
                             const results = data.map( result => ( {
                                 label: result.title,
