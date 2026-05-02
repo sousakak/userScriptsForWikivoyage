@@ -505,9 +505,12 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                                 >
                                     <cdx-field
                                         v-if="option.widget === 'input'"
+                                        :status="statuses[name]"
                                     >
                                         <cdx-text-input
                                             v-model="input[name]"
+                                            @blur="onInputBlur(option, name)"
+                                            @keydown.enter="onInputBlur(option, name)"
                                         >
                                         </cdx-text-input>
                                         <template #label>
@@ -522,12 +525,15 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                                     </cdx-field>
                                     <cdx-field
                                         v-if="option.widget === 'lookup'"
+                                        :status="statuses[name]"
                                     >
                                         <cdx-lookup
                                             v-model:selected="lookupSelection[name]"
                                             v-model:input-value="input[name]"
                                             :menu-items="lookupItems[name] ? lookupItems[name] : []"
                                             :menu-config="option.config"
+                                            @blur="onInputBlur(option, name)"
+                                            @keydown.enter="onInputBlur(option, name)"
                                             @update:input-value="onUpdateLookupValue(option.query, name, $event)"
                                             @load-more="onLoadLookupMore(option.query, name)"
                                             @update:selected="onLookupSelection"
@@ -642,14 +648,42 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                         .then( re => re.query.search );
                 };
 
+
                 const open = ref( true ),
                     panel = ref( 'main' ),
                     page = ref( CATEGORIES[0].value ),
                     input = reactive( vCard.params ),
+                    statuses = reactive(
+                        Object.keys( PARAMS ).reduce((acc, key) => { acc[key] = 'default'; return acc; }, {} )
+                    ),
                     lookupSelection = reactive( {} ),
                     lookupItems = reactive( {} );
 
-                const onUpdateLookupValue = function( query, name, value ) {
+                const onInputBlur = function( option, name ) {
+                    if ( !input[name] ) {
+                        statuses[name] = 'default';
+                        return;
+                    }
+                    if ( option.min || option.max ) {
+                        if ( !input[name].match(/^-?\d+$/) ) {
+                            statuses[name] = 'error';
+                            return;
+                        }
+                        if ( Number(input[name]) < option.min || Number(input[name]) > option.max ) {
+                            statuses[name] = 'error';
+                            return;
+                        }
+                        statuses[name] = 'default';
+                        return;
+                    }
+                    if ( option.validate ) {
+                        statuses[name] = !!String( input[name].match( option.validate ) )
+                            ? 'success'
+                            : 'error';
+                        return;
+                    }
+                },
+                onUpdateLookupValue = function( query, name, value ) {
                     fetchLookupResults( query, value )
                         .then( data => {
                             if ( input[name] !== value ) return;
@@ -673,8 +707,8 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                             lookupItems[name] = [];
                         });
                 },
-                onLoadLookupMore = function( query, name ) {
-                    if ( !input[name] ) return;
+                onLoadLookupMore = function( query, name = '' ) {
+                    if ( !nput[name] ) return;
 
                     fetchLookupResults( query, input[name], lookupItems[name].length )
                         .then( data => {
@@ -715,9 +749,11 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     panel,
                     page,
                     input,
+                    statuses,
                     lookupSelection,
                     lookupItems,
                     CATEGORIES,
+                    onInputBlur,
                     onUpdateLookupValue,
                     onLoadLookupMore,
                     onSettingsAction,
