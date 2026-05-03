@@ -66,7 +66,7 @@
     });
 })();
 
-mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require => {
+mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] ).then( require => {
     'use strict';
 
     const { createMwApp, ref, reactive } = require( 'vue' );
@@ -436,7 +436,15 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
             },
             termParam: 'srsearch'
         }
-    };
+    },
+    DEFAULT_OPTIONS = {
+        mode: 'view' // ['view', 'edit']
+    },
+    OPTIONS = Object.keys( DEFAULT_OPTIONS ).reduce( ( acc, key ) => {
+        const userOption = mw.user.options.get( 'voy-vCard-' + key );
+        acc[key] = userOption ? userOption : DEFAULT_OPTIONS[key];
+        return acc;
+    }, {} );
 
     /**
      * Returns the dialog object to be mounted
@@ -559,34 +567,48 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     </div>
                     <div
                         v-if="panel === 'preview'"
+                        class="voy-vCard-dialog__panel voy-vCard-dialog__panel-preview"
                     >
                         Preview
                     </div>
+                    <div
+                        v-if="panel === 'settings'"
+                        class="voy-vCard-dialog__panel voy-vCard-dialog__panel-settings"
+                    >
+                        <cdx-field>
+                            <cdx-select
+                                v-model:selected="settings.mode"
+                                :menu-items="[{ label: 'View Mode', value: 'view' }, { label: 'Edit Mode', value: 'edit' }]"
+                                default-label="Choose an option"
+                            ></cdx-select>
+                            <template #label>
+                                Mode
+                            </template>
+                            <template #description>
+                                Select a mode for visibleCard. For further information, please refer to the help page.
+                            </template>
+                        </cdx-field>
+                    </div>
 
                     <template #footer>
-                        <cdx-button
-                            action="progressive"
-                            weight="primary"
-                            aria-label="Settings"
-                            v-tooltip="'View and change your settings'"
-                            @click="onSettingsAction"
-                            class="voy-vCard-dialog__button voy-vCard-dialog__button__settings"
-                            disabled
-                        >
-                            <cdx-icon :icon="cdxIconSettings"></cdx-icon>
-                            <span class="voy-vCard-dialog__buttonLabel">Settings</span>
-                        </cdx-button>
-                        <cdx-button
-                            action="default"
-                            weight="primary"
-                            aria-label="Help"
-                            v-tooltip="'Open the help page in a new tab'"
-                            @click="onHelpAction"
-                            class="voy-vCard-dialog__button voy-vCard-dialog__button__help"
-                        >
-                            <cdx-icon :icon="cdxIconHelp"></cdx-icon>
-                            <span class="voy-vCard-dialog__buttonLabel">Help</span>
-                        </cdx-button>
+                        <cdx-button-group
+                            :buttons="[
+                                {
+                                    value: 'settings',
+                                    label: 'Settings',
+                                    icon: cdxIconSettings,
+                                    areaLabel: 'Settings',
+                                    disabled: panel === 'settings',
+                                },
+                                {
+                                    value: 'help',
+                                    label: 'Help',
+                                    icon: cdxIconHelp,
+                                    areaLabel: 'Help',
+                                }
+                            ]"
+                            @click="if ($event === 'settings') panel = 'settings'; else onHelpAction()"
+                        ></cdx-button-group>
                         <cdx-button
                             action="progressive"
                             weight="primary"
@@ -595,6 +617,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                             v-tooltip="'Preview and publish your edit'"
                             @click="onNextAction"
                             class="voy-vCard-dialog__button voy-vCard-dialog__button__next"
+                            :disabled="settings.mode === 'view'"
                         >
                             <span class="voy-vCard-dialog__buttonLabel">Next</span>
                             <cdx-icon :icon="cdxIconNext"></cdx-icon>
@@ -603,13 +626,24 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                             action="default"
                             weight="primary"
                             aria-label="Back"
-                            v-if="panel === 'preview'"
+                            v-if="['preview', 'settings'].includes(panel)"
                             v-tooltip="'Go back to reedit'"
                             @click="panel = 'main'"
                             class="voy-vCard-dialog__button voy-vCard-dialog__button__back"
                         >
                             <cdx-icon :icon="cdxIconPrevious"></cdx-icon>
                             <span class="voy-vCard-dialog__buttonLabel">Back</span>
+                        </cdx-button>
+                        <cdx-button
+                            action="progressive"
+                            weight="primary"
+                            aria-label="Publish"
+                            v-if="panel === 'settings'"
+                            v-tooltip="'Save your settings'"
+                            @click="onSaveSettingsAction"
+                            class="voy-vCard-dialog__button voy-vCard-dialog__button__publish"
+                        >
+                            <span class="voy-vCard-dialog__buttonLabel">Save</span>
                         </cdx-button>
                         <cdx-button
                             action="progressive"
@@ -626,6 +660,17 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                         </cdx-button>
                     </template>
                 </cdx-dialog>
+
+                <cdx-toast
+                    v-if="settingsSaved"
+                    type="success"
+                    :auto-dismiss="false"
+                    @user-dismissed="settingsSaved = false"
+                    @auto-dismissed="settingsSaved = false"
+                    standalone="true"
+                >
+                    Your settings have been saved.
+                </cdx-toast>
             `,
             computed: {
                 indexItems: function() {
@@ -657,7 +702,9 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                         Object.keys( PARAMS ).reduce((acc, key) => { acc[key] = 'default'; return acc; }, {} )
                     ),
                     lookupSelection = reactive( {} ),
-                    lookupItems = reactive( {} );
+                    lookupItems = reactive( {} ),
+                    settings = reactive( Object.assign( {}, OPTIONS ) ),
+                    settingsSaved = ref( false );
 
                 const onInputBlur = function( option, name ) {
                     if ( !input[name] ) {
@@ -725,12 +772,18 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                 onLookupSelection = function() {
                     // lookupSelection
                 },
-                onSettingsAction = function() {},
                 onHelpAction = function() {
                     window.open( Config.helpLink, '_blank' );
                 },
                 onNextAction = function() {
                     panel.value = 'preview';
+                },
+                onSaveSettingsAction = function() {
+                    for (const setting in settings) {
+                        mw.user.options.set( 'voy-vCard-' + setting, settings[setting] );
+                    }
+                    settingsSaved.value = true;
+                    panel.value = 'main';
                 },
                 onPublishAction = function() {
                     //
@@ -752,13 +805,15 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                     statuses,
                     lookupSelection,
                     lookupItems,
+                    settings,
+                    settingsSaved,
                     CATEGORIES,
                     onInputBlur,
                     onUpdateLookupValue,
                     onLoadLookupMore,
-                    onSettingsAction,
                     onHelpAction,
                     onNextAction,
+                    onSaveSettingsAction,
                     onPublishAction,
                     cdxIconClose,
                     cdxIconSettings,
@@ -818,6 +873,10 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex'] ).then( require =>
                 .component( 'CdxIcon', Codex.CdxIcon )
                 .component( 'CdxLookup', Codex.CdxLookup )
                 .component( 'CdxTextInput', Codex.CdxTextInput )
+                .component( 'CdxSelect', Codex.CdxSelect )
+                .component( 'CdxButtonGroup', Codex.CdxButtonGroup )
+                .component( 'CdxTooltip', Codex.CdxTooltip  )
+                .component( 'CdxToast', Codex.CdxToast  )
                 .mount( container );
         };
 
