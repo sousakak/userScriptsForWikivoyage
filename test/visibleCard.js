@@ -173,11 +173,11 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
             params: {
                 'image': {
                     title: 'Image',
-                    widget: 'lookup',
+                    widget: 'image',
                     placeholder: true,
                     query: 'commons',
                     config: {
-                        visibleItemLimit: 6
+                        visibleItemLimit: 5
                     }
                 },
                 'commonscat': {
@@ -186,7 +186,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                     placeholder: true,
                     query: 'commonscat',
                     config: {
-                        visibleItemLimit: 6
+                        visibleItemLimit: 5
                     }
                 }
             }
@@ -531,8 +531,15 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                                             {{ option.guide }}
                                         </template>
                                     </cdx-field>
+                                    <!-- Even when user has not finished input, image will be reloaded. So this acesses to commons very often, which should be avoided. -->
+                                    <cdx-image
+                                        :src="'//commons.wikimedia.org/w/index.php?title=Special:Filepath/' + input[name]"
+                                        :key="input[name]"
+                                        position="center"
+                                        v-if="option.widget === 'image'"
+                                    ></cdx-image>
                                     <cdx-field
-                                        v-if="option.widget === 'lookup'"
+                                        v-if="['lookup', 'image'].includes(option.widget)"
                                         :status="statuses[name]"
                                     >
                                         <cdx-lookup
@@ -545,7 +552,6 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                                             @update:input-value="onUpdateLookupValue(option.query, name, $event)"
                                             @load-more="onLoadLookupMore(option.query, name)"
                                             @update:selected="onLookupSelection"
-                                            v-if="option.widget === 'lookup'"
                                         >
                                             <template #no-results>
                                                 No results found.
@@ -755,7 +761,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                         });
                 },
                 onLoadLookupMore = function( query, name = '' ) {
-                    if ( !nput[name] ) return;
+                    if ( !input[name] ) return;
 
                     fetchLookupResults( query, input[name], lookupItems[name].length )
                         .then( data => {
@@ -871,8 +877,9 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                 .component( 'CdxDialog', Codex.CdxDialog )
                 .component( 'CdxField', Codex.CdxField )
                 .component( 'CdxIcon', Codex.CdxIcon )
-                .component( 'CdxLookup', Codex.CdxLookup )
                 .component( 'CdxTextInput', Codex.CdxTextInput )
+                .component( 'CdxImage', Codex.CdxImage )
+                .component( 'CdxLookup', Codex.CdxLookup )
                 .component( 'CdxSelect', Codex.CdxSelect )
                 .component( 'CdxButtonGroup', Codex.CdxButtonGroup )
                 .component( 'CdxTooltip', Codex.CdxTooltip  )
