@@ -66,7 +66,7 @@
     });
 })();
 
-mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] ).then( require => {
+mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] ).then( require => {
     'use strict';
 
     const { createMwApp, ref, reactive } = require( 'vue' );
@@ -441,7 +441,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
         mode: 'view' // ['view', 'edit']
     },
     OPTIONS = Object.keys( DEFAULT_OPTIONS ).reduce( ( acc, key ) => {
-        const userOption = mw.user.options.get( 'voy-vCard-' + key );
+        const userOption = mw.user.options.get( 'userjs-vcard-' + key );
         acc[key] = userOption ? userOption : DEFAULT_OPTIONS[key];
         return acc;
     }, {} );
@@ -623,7 +623,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                             v-tooltip="'Preview and publish your edit'"
                             @click="onNextAction"
                             class="voy-vCard-dialog__button voy-vCard-dialog__button__next"
-                            :disabled="settings.mode === 'view'"
+                            :disabled="options.mode === 'view'"
                         >
                             <span class="voy-vCard-dialog__buttonLabel">Next</span>
                             <cdx-icon :icon="cdxIconNext"></cdx-icon>
@@ -699,7 +699,6 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                         .then( re => re.query.search );
                 };
 
-
                 const open = ref( true ),
                     panel = ref( 'main' ),
                     page = ref( CATEGORIES[0].value ),
@@ -710,6 +709,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                     lookupSelection = reactive( {} ),
                     lookupItems = reactive( {} ),
                     settings = reactive( Object.assign( {}, OPTIONS ) ),
+                    options = reactive( Object.assign( {}, OPTIONS ) ),
                     settingsSaved = ref( false );
 
                 const onInputBlur = function( option, name ) {
@@ -785,11 +785,23 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                     panel.value = 'preview';
                 },
                 onSaveSettingsAction = function() {
-                    for (const setting in settings) {
-                        mw.user.options.set( 'voy-vCard-' + setting, settings[setting] );
-                    }
-                    settingsSaved.value = true;
-                    panel.value = 'main';
+                    const api = new mw.Api();
+                    const promises = Object.keys(settings).map( setting => {
+                        console.log( 'userjs-vcard-' + setting, settings[setting] )
+                        mw.user.options.set( 'userjs-vcard-' + setting, settings[setting] );
+                        options[setting] = settings[setting];
+                        return api.saveOption('userjs-vcard-' + setting, settings[setting]);
+                    });
+
+                    Promise.all(promises)
+                        .then(() => {
+                            console.log('saved')
+                            settingsSaved.value = true;
+                            panel.value = 'main';
+                        })
+                        .catch(function(err) {
+                            console.log("保存失敗", err);
+                        });
                 },
                 onPublishAction = function() {
                     //
@@ -812,6 +824,7 @@ mw.loader.using( ['mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] 
                     lookupSelection,
                     lookupItems,
                     settings,
+                    options,
                     settingsSaved,
                     CATEGORIES,
                     onInputBlur,
