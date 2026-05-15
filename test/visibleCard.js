@@ -304,8 +304,7 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                 },
                 'description': {
                     title: 'Description',
-                    widget: 'input',
-                    type: 'multiline',
+                    widget: 'textarea',
                     placeholder: true
                 }
             }
@@ -526,6 +525,23 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                                         </template>
                                         <template #description>
                                             {{ option.desc }}
+                                        </template>
+                                        <template #help-text>
+                                            {{ option.guide }}
+                                        </template>
+                                    </cdx-field>
+                                    <cdx-field
+                                        v-if="option.widget === 'textarea'"
+                                        :status="statuses[name]"
+                                    >
+                                        <cdx-text-area
+                                            v-model="input[name]"
+                                            rows="3"
+                                            @blur="onInputBlur(option, name)"
+                                        >
+                                        </cdx-text-area>
+                                        <template #label>
+                                            {{ option.title }}
                                         </template>
                                         <template #help-text>
                                             {{ option.guide }}
@@ -891,6 +907,7 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                 .component( 'CdxField', Codex.CdxField )
                 .component( 'CdxIcon', Codex.CdxIcon )
                 .component( 'CdxTextInput', Codex.CdxTextInput )
+                .component( 'CdxTextArea', Codex.CdxTextArea )
                 .component( 'CdxImage', Codex.CdxImage )
                 .component( 'CdxLookup', Codex.CdxLookup )
                 .component( 'CdxSelect', Codex.CdxSelect )
