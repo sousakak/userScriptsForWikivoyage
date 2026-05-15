@@ -437,7 +437,9 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
         }
     },
     DEFAULT_OPTIONS = {
-        mode: 'view' // ['view', 'edit']
+        mode: 'view', // ['view', 'edit']
+        format: 'inline', // ['inline', 'full-inline', 'block']
+        storage: 'wikidata-complementary' // ['wikidata-prioritized', 'wikidata-complementary', 'local-complementary', 'local-prioritized']
     },
     OPTIONS = Object.keys( DEFAULT_OPTIONS ).reduce( ( acc, key ) => {
         const userOption = mw.user.options.get( 'userjs-vcard-' + key );
@@ -463,7 +465,18 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                     class="voy-vCard-dialog"
                 >
                     <template #header>
-                        <h2 class="voy-vCard-dialog__title">${vCard.params.name}</h2>
+                        <h2
+                            class="voy-vCard-dialog__title"
+                            v-if="panel !== 'settings'"
+                        >
+                            ${vCard.params.name}
+                        </h2>
+                        <h2
+                            class="voy-vCard-dialog__title"
+                            v-if="panel === 'settings'"
+                        >
+                            Settings
+                        </h2>
                         <cdx-button
                             action="default"
                             weight="quiet"
@@ -597,6 +610,7 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                         v-if="panel === 'settings'"
                         class="voy-vCard-dialog__panel voy-vCard-dialog__panel-settings"
                     >
+                        For further information about each setting, please refer to the help page.
                         <cdx-field>
                             <cdx-select
                                 v-model:selected="settings.mode"
@@ -607,7 +621,113 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                                 Mode
                             </template>
                             <template #description>
-                                Select a mode for visibleCard. For further information, please refer to the help page.
+                                Select a mode for visibleCard.
+                            </template>
+                        </cdx-field>
+                        <hr />
+                        <h3 class="voy-vCard-settings-heading">Edit</h3>
+                        <cdx-field
+                            :is-fieldset="true"
+                        >
+                            <template #label>
+                                VCard format
+                            </template>
+                            <cdx-radio
+                                :key="'radio-format'"
+                                v-model="settings.format"
+                                name="radio-group-format"
+                                input-value="inline"
+                                :disabled="settings.mode !== 'edit'"
+                            >
+                                Inline
+                                <template #description>
+                                    Output will not include empty parameters and will be in inline format.
+                                </template>
+                            </cdx-radio>
+                            <cdx-radio
+                                :key="'radio-format'"
+                                v-model="settings.format"
+                                name="radio-group-format"
+                                input-value="full-inline"
+                                :disabled="settings.mode !== 'edit'"
+                            >
+                                Full-inline
+                                <template #description>
+                                    Output will include empty parameters and will be in inline format.
+                                </template>
+                            </cdx-radio>
+                            <cdx-radio
+                                :key="'radio-format'"
+                                v-model="settings.format"
+                                name="radio-group-format"
+                                input-value="block"
+                                :disabled="settings.mode !== 'edit'"
+                            >
+                                Block
+                                <template #description>
+                                    Output will be formatted with newline characters.
+                                </template>
+                            </cdx-radio>
+                            <template #description>
+                                Select a format of text output of vCard when you publish your edit.
+                            </template>
+                        </cdx-field>
+                        <cdx-field
+                            :is-fieldset="true"
+                        >
+                            <template #label>
+                                Storage of synchronizable data
+                            </template>
+                            <cdx-radio
+                                :key="'radio-storage'"
+                                v-model="settings.storage"
+                                name="radio-group-storage"
+                                input-value="wikidata-prioritized"
+                                :disabled="settings.mode !== 'edit'"
+                            >
+                                Wikidata Prioritized
+                                <template #description>
+                                    The values including ones you did not edit will be stored in Wikidata whenever possible.
+                                </template>
+                            </cdx-radio>
+                            <cdx-radio
+                                :key="'radio-storage'"
+                                v-model="settings.storage"
+                                name="radio-group-storage"
+                                input-value="wikidata-complementary"
+                                :disabled="settings.mode !== 'edit'"
+                            >
+                                Wikidata Complementary (default)
+                                <template #description>
+                                    The values you updated will be saved to Wikidata if possible.
+                                </template>
+                            </cdx-radio>
+                            <cdx-radio
+                                :key="'radio-storage'"
+                                v-model="settings.storage"
+                                name="radio-group-storage"
+                                input-value="local-complementary"
+                                :disabled="settings.mode !== 'edit'"
+                            >
+                                Local Complementary
+                                <template #description>
+                                    The values you updated will be saved to the local page if possible.
+                                </template>
+                            </cdx-radio>
+                            <cdx-radio
+                                :key="'radio-storage'"
+                                v-model="settings.storage"
+                                name="radio-group-storage"
+                                input-value="local-prioritized"
+                                :disabled="settings.mode !== 'edit'"
+                            >
+                                Local Prioritized
+                                <template #description>
+                                    The values including ones you did not edit will be stored in the local page whenever possible.
+                                </template>
+                            </cdx-radio>
+                            <template #description>
+                                You can choose where to save the values primarily when you submit your edit via visibleCard.
                             </template>
                         </cdx-field>
                     </div>
@@ -803,7 +923,6 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                 onSaveSettingsAction = function() {
                     const api = new mw.Api();
                     const promises = Object.keys(settings).map( setting => {
-                        console.log( 'userjs-vcard-' + setting, settings[setting] )
                         mw.user.options.set( 'userjs-vcard-' + setting, settings[setting] );
                         options[setting] = settings[setting];
                         return api.saveOption('userjs-vcard-' + setting, settings[setting]);
@@ -911,6 +1030,7 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                 .component( 'CdxImage', Codex.CdxImage )
                 .component( 'CdxLookup', Codex.CdxLookup )
                 .component( 'CdxSelect', Codex.CdxSelect )
+                .component( 'CdxRadio', Codex.CdxRadio )
                 .component( 'CdxButtonGroup', Codex.CdxButtonGroup )
                 .component( 'CdxTooltip', Codex.CdxTooltip  )
                 .component( 'CdxToast', Codex.CdxToast  )
