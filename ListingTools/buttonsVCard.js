@@ -82,7 +82,7 @@ mw.loader.using([ 'ext.gadget.getVCardSetting', 'mediawiki.util', 'vue', '@wikim
         if (day < 10) day = '0' + day;
         return year + '-' + month + '-' + day;
     };
-    let post_text = " | name-local= | name-latin= | alt= | comment=\n| address= | address-local= | directions= | directions-local= | lat= | long=\n| wikidata= | commons= | url=\n| image= | phone= | tollfree= | mobile= | fax= | email=\n| hours= | checkin= | checkout=\n| payment= | price=\n| content=\n| lastedit=" + currentLastEditDate() + "\n}}";
+    let post_text = " | name-local= | name-latin= | alt= | comment=\n| address= | address-local= | directions= | directions-local= | lat= | long=\n| wikidata= | url=\n| image= | phone= | tollfree= | mobile= | fax= | email=\n| hours= | checkin= | checkout=\n| payment= | price=\n| content=\n| lastedit=" + currentLastEditDate() + "\n}}";
 
     const selectType = ( context, group ) => {
         const dialog = {
