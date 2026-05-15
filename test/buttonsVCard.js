@@ -12,20 +12,6 @@
 //   >>[[Special:MyPage/common.js]]に以下のコードを追加 : 
 //   >>mw.loader.load('//ja.wikivoyage.org/w/index.php?title=User:Tmv/custom/ButtonsVCard.js&action=raw&ctype=text/javascript');
 /******************************************************************************/
-// <source lang="javascript">
-// 完成状況 : 完成
-// 当スクリプトは完成しています。不具合は出ていませんが、使用する際には自己責任でお願い致します。
-/******************************************************************************/
-// ja>>getVCardSetting
-//   >>vCardの地域化された設定をLuaモジュールから取得する関数を提供します。
-//   >>
-//   >>作者    : Tmv
-//   >>URL     : 
-//   >>
-//   >>使用方法
-//   >>[[Special:MyPage/common.js]]に以下のコードを追加 : 
-//   >>
-/******************************************************************************/
 
 /**
  * Fetch the setting data from the specified lua module.
