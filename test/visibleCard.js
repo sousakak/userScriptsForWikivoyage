@@ -66,7 +66,7 @@
     });
 })();
 
-mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', 'mediawiki.user'] ).then( require => {
+mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi', 'mediawiki.user', '@wikimedia/codex'] ).then( require => {
     'use strict';
 
     const { createMwApp, ref, reactive } = require( 'vue' );
@@ -524,7 +524,7 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                                     :key="name"
                                 >
                                     <cdx-field
-                                        v-if="option.widget === 'input'"
+                                        v-if="['input', 'map'].includes(option.widget)"
                                         :status="statuses[name]"
                                     >
                                         <cdx-text-input
@@ -564,6 +564,7 @@ mw.loader.using( ['mediawiki.api', 'mediawiki.ForeignApi', '@wikimedia/codex', '
                                     <cdx-image
                                         :src="'//commons.wikimedia.org/w/index.php?title=Special:Filepath/' + lookupSelection[name]"
                                         :key="lookupSelection[name]"
+                                        alt="No valid image selected"
                                         position="center"
                                         v-if="option.widget === 'image'"
                                     ></cdx-image>
