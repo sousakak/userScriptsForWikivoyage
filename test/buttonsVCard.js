@@ -13,60 +13,6 @@
 //   >>mw.loader.load('//ja.wikivoyage.org/w/index.php?title=User:Tmv/custom/ButtonsVCard.js&action=raw&ctype=text/javascript');
 /******************************************************************************/
 
-/**
- * Fetch the setting data from the specified lua module.
- * @param {Object} scribunto       Information about the target lua module.
- * @param {String} scribunto.title Title of the target lua module.
- * @param {RegExp} scribunto.start To remove from start
- * @param {RegExp} scribunto.end   To remove at the end
- * @param {String} scribunto.name  Name of the new array in json format
- * @returns {jQuery.Promise}
- */
-const fetchData = scribunto => {
-    const params = {
-        action: 'query',
-        prop: 'revisions',
-        titles: scribunto.title,
-        formatversion: 2,
-        rvprop: 'content',
-        rvslots: 'main',
-        rvlimit: 1
-    };
-    return new mw.Api().get( params ).then( data => {
-        let content = data.query.pages[0].revisions[0].slots.main.content,
-            result;
-
-        // Borrowed some RegExp below from https://w.wiki/HXXm
-        // '=' within string will break this
-        content = content.replace( /\-\-.*\n/g, '' ) // remove comments
-            .replace( /\s+/gm, '' )          // remove line breaks and tabs
-            .replace( scribunto.start, '' )  // delete beginning
-            .replace( scribunto.end, '' )    // delete end
-            .replace(                        // remove square brackets from keys
-                /\[\"([^\[\]\"]+?)\"\]\=/gm,
-                (_, p) => '\"' + p + '\":'
-            )
-            .replace(                        // enclose keys in double quotes
-                /([^\,\=\"\{\}]+?)\=/gm,
-                (_, p) => '\"' + p + '\":'
-            )
-            .replace(                        // replace arrays
-                /\{(\"[^\"]+?\"\,)*?\"[^\"]+?\"\}/g,
-                m => m.replace('{', '[').replace('}', ']')
-            );
-
-        try {
-            result = JSON.parse( "{" + content + "}" );
-            return result;
-        } catch ( e ) {
-            console.warn( e );
-            return fetch( '//raw.githubusercontent.com/sousakak/userScriptsForWikivoyage/refs/heads/master/ListingTools/vCardSetting.json' )
-                .then( r => r.json() )
-                .then( r => { result = r; });
-        }
-    });
-};
-
 const func =  () => {
     'use strict';
 
