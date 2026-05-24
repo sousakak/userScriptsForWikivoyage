@@ -953,7 +953,7 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                                 : 'error';
                         }
                     }
-                    this.updMap( this.map );
+                    if (option.updmap) this.updMap( this.map );
                 },
                 onUpdateLookupValue = function( query, name, value ) {
                     fetchLookupResults( query, value )
