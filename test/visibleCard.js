@@ -198,11 +198,12 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
             params: {
                 'lat': {
                     title: 'Latitude',
-                    widget: 'input',
+                    widget: 'map',
                     type: 'number',
                     max: 90,
                     min: -90,
-                    placeholder: true
+                    placeholder: true,
+                    updmap: true
                 },
                 'long': {
                     title: 'Longitude',
@@ -210,7 +211,8 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     type: 'number',
                     max: 180,
                     min: -180,
-                    placeholder: true
+                    placeholder: true,
+                    updmap: true
                 },
                 'zoom': {
                     title: 'Zoom',
@@ -218,7 +220,8 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     type: 'number',
                     max: 19,
                     min: 0,
-                    placeholder: true
+                    placeholder: true,
+                    updmap: true
                 }
             }
         },
@@ -502,7 +505,7 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                                     size="large"
                                     v-for="item in indexItems"
                                     :key="item"
-                                    @click="page = item.value"
+                                    @click="onChangePage(item)"
                                     class="voy-vCard-dialog__index__item"
                                     :class="'voy-vCard-dialog__index__item--' + item.value"
                                 >
@@ -523,6 +526,11 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                                     v-for="(option, name) in item.params"
                                     :key="name"
                                 >
+                                    <div
+                                        v-if="option.widget === 'map'"
+                                        id="voy-vCard-map-container"
+                                        class="voy-vCard-map-container"
+                                    />
                                     <cdx-field
                                         v-if="['input', 'map'].includes(option.widget)"
                                         :status="statuses[name]"
@@ -820,6 +828,70 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     return this.CATEGORIES.filter( item => item.active );
                 }
             },
+            methods: {
+                observeMap: function() {
+                    /* Build external components */
+                    const target = document.getElementsByClassName('voy-vCard-dialog__panel-main')[0];
+                    const observer = new MutationObserver( mutationList => {
+                        for (const mutation of mutationList) {
+                            if (mutation.type !== 'childList') continue;
+                            if (mutation.addedNodes.length === 0) continue;
+                            const childlen = mutation.addedNodes[0]?.children
+                            const container = childlen
+                                ? Array.from( childlen ).find(
+                                    child => child.classList.contains('voy-vCard-map-container')
+                                )
+                                : null;
+                            if (!container) continue;
+
+                            this.createMap( container ); // CAUTION: `this` within arrow function
+                        }
+                    });
+                    observer.observe(target, {
+                        childList: true,
+                        subtree: true
+                    });
+                },
+                createMap: function( container ) {
+                    container.innerHTML = '';
+
+                    const kartoBox = mw.loader.require( 'ext.kartographer.box' );
+                    const coord = [this.input['lat'] || 10, this.input['long'] || 100];
+                    const map = kartoBox.map( {
+                        container: container,
+                        captionText: this.input['name'],
+                        allowFullScreen: true,
+                        data: [],
+                        alwaysInteractive: true,
+                        center: coord,
+                        zoom: this.input['zoom'] || 13,
+                        lang: 'en', // this should be personalized
+                        fullscreen: false
+                    });
+                    this.map = map;
+                    return map;
+                },
+                updMap: function( map = this.map ) {
+                    const coord = [this.input['lat'] || 0, this.input['long'] || 0];
+                    map.setView( coord, this.input['zoom'] || 13 );
+                }
+            },
+            watch: {
+                panel: async function(newv, _) {
+                    await this.$nextTick();
+
+                    if (newv === 'main') {
+                        this.observeMap();
+
+                        if (this.page === 'map') {
+                            this.createMap( document.getElementById('voy-vCard-map-container') )
+                        };
+                    }
+                }
+            },
+            mounted() {
+                this.observeMap();
+            },
             setup() {
                 /* Utility Functions */
                 const defaultSelection = () => 
@@ -843,6 +915,7 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                         .then( re => re.query.search );
                 };
 
+                /* Define constants */
                 const open = ref( true ),
                     panel = ref( 'main' ),
                     page = ref( CATEGORIES[0].value ),
@@ -856,29 +929,31 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     options = reactive( Object.assign( {}, OPTIONS ) ),
                     settingsSaved = ref( false );
 
-                const onInputBlur = function( option, name ) {
+                const onChangePage = function( item ) {
+                    page.value = item.value;
+                },
+                onInputBlur = function( option, name ) {
                     if ( !input[name] ) {
                         statuses[name] = 'default';
-                        return;
-                    }
-                    if ( option.min || option.max ) {
-                        if ( !input[name].match(/^-?\d+$/) ) {
-                            statuses[name] = 'error';
-                            return;
+                    } else {
+                        if ( option.min || option.max ) {
+                            if ( !input[name].match(/^-?\d+(?:\.\d+)?$/) ) {
+                                statuses[name] = 'error';
+                                return;
+                            }
+                            if ( Number(input[name]) < option.min || Number(input[name]) > option.max ) {
+                                statuses[name] = 'error';
+                                return;
+                            }
+                            statuses[name] = 'default';
                         }
-                        if ( Number(input[name]) < option.min || Number(input[name]) > option.max ) {
-                            statuses[name] = 'error';
-                            return;
+                        if ( option.validate ) {
+                            statuses[name] = !!String( input[name].match( option.validate ) )
+                                ? 'success'
+                                : 'error';
                         }
-                        statuses[name] = 'default';
-                        return;
                     }
-                    if ( option.validate ) {
-                        statuses[name] = !!String( input[name].match( option.validate ) )
-                            ? 'success'
-                            : 'error';
-                        return;
-                    }
+                    this.updMap( this.map );
                 },
                 onUpdateLookupValue = function( query, name, value ) {
                     fetchLookupResults( query, value )
@@ -970,6 +1045,7 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     options,
                     settingsSaved,
                     CATEGORIES,
+                    onChangePage,
                     onInputBlur,
                     onUpdateLookupValue,
                     onLoadLookupMore,
@@ -1124,6 +1200,10 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
     padding: 8px 24px;
     flex-grow: 1;
     overflow-y: scroll;
+}
+
+.voy-vCard-map-container {
+    height: 50%;
 }
 
 .voy-vCard-dialog .cdx-dialog__footer {
