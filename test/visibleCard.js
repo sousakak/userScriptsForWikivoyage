@@ -667,7 +667,26 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                                 </div>
                             </template>
                         </cdx-field>
-                        Preview
+                        <hr />
+                        <cdx-accordion
+                            @toggle="onLoadPreview"
+                            class="voy-vCard-dialog-preview-container"
+                        >
+                            <template #title>
+                                Preview
+                            </template>
+                            <cdx-progress-indicator
+                                v-if="!loadingPreviewCompleted"
+                            >
+                                Loading preview
+                            </cdx-progress-indicator>
+                            <div
+                                class="voy-vCard-dialog-preview"
+                                v-if="loadingPreviewCompleted"
+                            >
+                                Here's a preview
+                            </div>
+                        </cdx-accordion>
                     </div>
                     <div
                         v-if="panel === 'settings'"
@@ -890,9 +909,9 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                         for (const mutation of mutationList) {
                             if (mutation.type !== 'childList') continue;
                             if (mutation.addedNodes.length === 0) continue;
-                            const childlen = mutation.addedNodes[0]?.children
-                            const container = childlen
-                                ? Array.from( childlen ).find(
+                            const children = mutation.addedNodes[0]?.children
+                            const container = children
+                                ? Array.from( children ).find(
                                     child => child.classList.contains('voy-vCard-map-container')
                                 )
                                 : null;
@@ -983,6 +1002,7 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     watchThisPage = ref( false ),
                     watchExpiry = ref( 'infinite' ),
                     summary = ref( '' ),
+                    loadingPreviewCompleted = ref( false ),
                     settings = reactive( Object.assign( {}, OPTIONS ) ),
                     options = reactive( Object.assign( {}, OPTIONS ) ),
                     settingsSaved = ref( false );
@@ -1060,6 +1080,14 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     console.warn( summary.value.slice(0, 482) )
                     if (481 - summary.value.length < 0) summary.value = summary.value.slice(0, 482);
                 },
+                onLoadPreview = function(isOpen) {
+                    if (!isOpen) {
+                        loadingPreviewCompleted.value = false;
+                        return;
+                    }
+                    // Load preview here
+                    //loadingPreviewCompleted.value = true
+                },
                 onHelpAction = function() {
                     window.open( Config.helpLink, '_blank' );
                 },
@@ -1118,6 +1146,7 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     onLoadLookupMore,
                     onLookupSelection,
                     onSummaryInput,
+                    onLoadPreview,
                     onHelpAction,
                     onNextAction,
                     onSaveSettingsAction,
@@ -1184,6 +1213,8 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                 .component( 'CdxLookup', Codex.CdxLookup )
                 .component( 'CdxCheckbox', Codex.CdxCheckbox )
                 .component( 'CdxSelect', Codex.CdxSelect )
+                .component( 'CdxAccordion', Codex.CdxAccordion )
+                .component( 'CdxProgressIndicator', Codex.CdxProgressIndicator )
                 .component( 'CdxRadio', Codex.CdxRadio )
                 .component( 'CdxButtonGroup', Codex.CdxButtonGroup )
                 .component( 'CdxTooltip', Codex.CdxTooltip  )
@@ -1350,6 +1381,10 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
 
 .voy-vCard-dialog-summary__help-text__counter {
     margin-left: auto;
+}
+
+.voy-vCard-dialog-preview-container > .cdx-accordion__content {
+    text-align: center;
 }
 
 .voy-vCard-dialog .cdx-dialog__footer {
