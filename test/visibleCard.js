@@ -613,6 +613,60 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                         v-if="panel === 'preview'"
                         class="voy-vCard-dialog__panel voy-vCard-dialog__panel-preview"
                     >
+                        <cdx-field class="voy-vCard-dialog-minor">
+                            <template #label>
+                                Additional edit options
+                            </template>
+
+                            <cdx-checkbox
+                                v-model="isMinor"
+                                :inline="true"
+                            >
+                                This is a minor edit
+                            </cdx-checkbox>
+                            <cdx-checkbox
+                                v-model="watchThisPage"
+                                :inline="true"
+                            >
+                                Watch this page
+                            </cdx-checkbox>
+                            <cdx-select
+                                v-model:selected="watchExpiry"
+                                :menu-items="[
+                                    { label: 'Permanent', value: 'infinite' },
+                                    { label: '1 week', value: '1 week' },
+                                    { label: '1 month', value: '1 month' },
+                                    { label: '3 months', value: '3 months' },
+                                    { label: '6 months', value: '6 months' },
+                                    { label: '1 year', value: '1 year' }
+                                ]"
+                                default-label="Choose an option"
+                                :disabled="!watchThisPage"
+                            />
+                        </cdx-field>
+                        <cdx-field class="voy-vCard-dialog-summary">
+                            <cdx-text-input
+                                v-model="summary"
+                                placeholder="Enter the summary of your edit"
+                                maxlength=481
+                                @input="onSummaryInput"
+                            />
+                            <template #label>
+                                Edit summary
+                            </template>
+                            <template #description>
+                                The text "// via visibleCard" will be added to your summary
+                            </template>
+                            <template #help-text>
+                                <div
+                                    class="voy-vCard-dialog-summary__help-text"
+                                >
+                                    <div class="voy-vCard-dialog-summary__help-text__counter">
+                                        {{ 481 - summary.length }}
+                                    </div>
+                                </div>
+                            </template>
+                        </cdx-field>
                         Preview
                     </div>
                     <div
@@ -925,6 +979,10 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     ),
                     lookupSelection = reactive( defaultSelection() ),
                     lookupItems = reactive( {} ),
+                    isMinor = ref( false ),
+                    watchThisPage = ref( false ),
+                    watchExpiry = ref( 'infinite' ),
+                    summary = ref( '' ),
                     settings = reactive( Object.assign( {}, OPTIONS ) ),
                     options = reactive( Object.assign( {}, OPTIONS ) ),
                     settingsSaved = ref( false );
@@ -997,6 +1055,11 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                 onLookupSelection = function() {
                     // lookupSelection
                 },
+                onSummaryInput = function() {
+                    console.log( 481 - summary.value.length )
+                    console.warn( summary.value.slice(0, 482) )
+                    if (481 - summary.value.length < 0) summary.value = summary.value.slice(0, 482);
+                },
                 onHelpAction = function() {
                     window.open( Config.helpLink, '_blank' );
                 },
@@ -1041,6 +1104,10 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     statuses,
                     lookupSelection,
                     lookupItems,
+                    isMinor,
+                    watchThisPage,
+                    watchExpiry,
+                    summary,
                     settings,
                     options,
                     settingsSaved,
@@ -1049,6 +1116,8 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                     onInputBlur,
                     onUpdateLookupValue,
                     onLoadLookupMore,
+                    onLookupSelection,
+                    onSummaryInput,
                     onHelpAction,
                     onNextAction,
                     onSaveSettingsAction,
@@ -1113,6 +1182,7 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                 .component( 'CdxTextArea', Codex.CdxTextArea )
                 .component( 'CdxImage', Codex.CdxImage )
                 .component( 'CdxLookup', Codex.CdxLookup )
+                .component( 'CdxCheckbox', Codex.CdxCheckbox )
                 .component( 'CdxSelect', Codex.CdxSelect )
                 .component( 'CdxRadio', Codex.CdxRadio )
                 .component( 'CdxButtonGroup', Codex.CdxButtonGroup )
@@ -1125,14 +1195,81 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
          * Parse the element of vCard and generate an instance of VCard class
          * @param {Element} elem div element of the vCard
          * @returns {VCard} Instance of VCard class.
+         * 
+         * @note params already covered:
+         * - name
+         * - name-local
+         * - name-latin
+         * - comment
+         * - type
+         * - subtype
+         * - address
+         * - address-local
+         * - directions
+         * - directions-local
+         * - skype
+         * - wikipedia
+         * - wikidata
+         * - commons
+         * - url
+         * - group
+         * - phone
+         * - tollfree
+         * - mobile
+         * - fax
+         * - email
+         * - social medias
+         * - hours
+         * - checkin
+         * - checkout
+         * - payment
+         * - price
+         * - description
+         * - country
+         * 
+         * No support:
+         * - name-map
+         * - alt
+         * - lat
+         * - long
+         * - zoom
+         * - auto
+         * - show
+         * - map-group
+         * - image
+         * - before
+         * - lastedit
+         * - styles
+         * - copy-marker
+         * - status
+         * - section-from
          */
         static parse( elem ) {
             let params = {};
-            for (const child of elem.children) {
+            for (const child of elem.getElementsByTagName('*')) {
                 child.classList?.forEach( c => {
                     const match = c.match(/^listing-(\D+)$/)?.[1]; // this can be undefined
                     if (!match) return;
-                    if ( Object.keys( PARAMS ).includes( match ) ) {
+                    const matchSister = match.match(/^sister-(\D+)$/)?.[1]
+                    const matchSM = match.match(/^social-media-(\D+)$/)?.[1]
+                    switch ( match ) {
+                        case 'content': params['description'] = child.textContent; break;
+                        case 'credit': params['payment'] = child.textContent; break;
+                    }
+                    if (
+                        Object.keys( PARAMS ).includes( match ) &&
+                        !Object.keys( params ).includes( match )
+                    ) {
+                        params[match] = child.textContent;
+                    } else if (
+                        Object.keys( PARAMS ).includes( matchSister ) &&
+                        !Object.keys( params ).includes( matchSister )
+                    ) {
+                        params[match] = child.textContent;
+                    } else if (
+                        Object.keys( PARAMS ).includes( matchSM ) &&
+                        !Object.keys( params ).includes( matchSM )
+                    ) {
                         params[match] = child.textContent;
                     }
                 });
@@ -1206,10 +1343,18 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
     height: 50%;
 }
 
+.voy-vCard-dialog-summary__help-text {
+    display: flex;
+    justify-content: space-between;
+}
+
+.voy-vCard-dialog-summary__help-text__counter {
+    margin-left: auto;
+}
+
 .voy-vCard-dialog .cdx-dialog__footer {
     display: flex;
 }
-
 
 .voy-vCard-dialog__buttonLabel {
     display: none;
