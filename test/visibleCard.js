@@ -66,15 +66,42 @@
     });
 })();
 
-mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi', 'mediawiki.user', '@wikimedia/codex'] ).then( require => {
+mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi', 'mediawiki.user', '@wikimedia/codex'] ).then( require =>
+    new mw.Api().get({
+		action: 'query',
+		prop: 'revisions',
+		rvprop: 'content',
+		titles: mw.config.get('wgPageName'),
+		formatversion: 2
+	}).then( data => {
+        const wikitext = data.query.pages[0].revisions?.[0]?.content;
+        if (!wikitext) throw new Error("visibleCard could not load the wikitext of the current page");
+        return {require: require, wikitext: wikitext};
+    })
+).then( context => {
     'use strict';
 
-    const { createMwApp, ref, reactive } = require( 'vue' );
-    const Codex = require( '@wikimedia/codex' );
+    const { createMwApp, ref, reactive } = context.require( 'vue' );
+    const Codex = context.require( '@wikimedia/codex' );
 
+    /* Utility Functions */
+    const capitalize = str => str[0].toUpperCase() + str.slice(1);
+
+    /* Constants used across the script */
     const Config = {
         i18n: {},
-        helpLink: 'https://ja.wikivoyage.org/w/index.php?title=ヘルプ:visibleCard'
+        helpLink: 'https://ja.wikivoyage.org/w/index.php?title=ヘルプ:visibleCard',
+        templates: [
+            'VCard',
+            'Listing',
+            'Go',
+            'See',
+            'Do',
+            'Buy',
+            'Eat',
+            'Drink',
+            'Sleep'
+        ]
     },
     CATEGORIES = [
         {
@@ -448,8 +475,130 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
         const userOption = mw.user.options.get( 'userjs-vcard-' + key );
         acc[key] = userOption ? userOption : DEFAULT_OPTIONS[key];
         return acc;
-    }, {} );
+    }, {} ),
+    VCARDMAP = (() => {
+        const wikitext = context.wikitext;
 
+        const result = {};
+        let i = 0;
+
+        // Read each letter in `wikitext`
+        while (i < wikitext.length) {
+            // Find a start point of template
+            if (wikitext.slice(i, i + 2) !== '{{') {
+                i++;
+                continue;
+            }
+
+            // Get the name of the template
+            const templateStart = i;
+            i = i + 2;
+            while (/\s/.test(wikitext[i])) i++;
+            const nameStart = i;
+            while (
+                i < wikitext.length &&
+                !['|', '\n', '\r'].includes(wikitext[i]) &&
+                wikitext.slice(i, i + 2) !== '}}'
+            ) i++;
+            const templateName = wikitext.slice(nameStart, i).trim();
+
+            // Ignore templates that are not vCard.
+            if (templateName !== 'vCard') continue;
+
+            // Start parsing vCard
+            const params = {};
+            let templateDepth = 1,
+                linkDepth = 0, // in order to handle links within file descriptions
+                paramName = null,
+                currentValue = '',
+                templateEnd;
+
+            while (i < wikitext.length) {
+                if (wikitext.slice(i, i + 2) === '{{') {
+                    templateDepth++;
+                    currentValue += '{{';
+                    i += 2;
+                    continue;
+                }
+
+                if (wikitext.slice(i, i + 2) === '}}') {
+                    templateDepth--;
+
+                    if (templateDepth === 0) {
+                        if (paramName !== null)
+                            params[paramName.trim()] = currentValue.trim();
+                        templateEnd = i + 2;
+                        break;
+                    }
+
+                    currentValue += '}}';
+                    i += 2;
+                    continue;
+                }
+
+                if (wikitext.slice(i, i + 2) === '[[') {
+                    linkDepth++;
+                    currentValue += '[[';
+                    i += 2;
+                    continue;
+                }
+
+                if (wikitext.slice(i, i + 2) === ']]') {
+                    linkDepth--;
+                    currentValue += ']]';
+                    i += 2;
+                    continue;
+                }
+
+                if (
+                    wikitext[i] === '|' &&
+                    templateDepth === 1 &&
+                    linkDepth === 0
+                ) {
+                    if (paramName !== null)
+                        params[paramName.trim()] = currentValue.trim();
+
+                    currentValue = '';
+                    paramName = null;
+
+                    i++;
+
+                    while (/\s/.test(wikitext[i]))
+                        i++;
+
+                    let eqPos = i;
+
+                    while (
+                        eqPos < wikitext.length &&
+                        wikitext[eqPos] !== '=' &&
+                        wikitext[eqPos] !== '|' &&
+                        wikitext.slice(eqPos, eqPos + 2) !== '}}'
+                    ) eqPos++;
+
+                    if (wikitext[eqPos] === '=') {
+                        paramName = wikitext.slice(i, eqPos).trim();
+                        i = eqPos + 1;
+                    }
+
+                    continue;
+                }
+                currentValue += wikitext[i];
+                i++;
+            }
+
+            params.rawText = wikitext.slice(templateStart, templateEnd);
+            if (params.name) result[params.name] = params;
+            else console.warn('Failed to extract the name of the following template: \n\n', params.rawText || '');
+
+            i++;
+        }
+
+        return result;
+    })();
+
+    console.log(VCARDMAP);
+
+    /* Main procedure */
     /**
      * Returns the dialog object to be mounted
      * 
@@ -1222,6 +1371,15 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                 .mount( container );
         };
 
+        extractWikitext() {
+            const name = this.params.name;
+            if (!name) {
+                console.error("The name of vCard not found");
+                return this.params;
+            }
+            //
+        };
+
         /**
          * Parse the element of vCard and generate an instance of VCard class
          * @param {Element} elem div element of the vCard
@@ -1315,6 +1473,7 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
         };
     };
 
+    /* Entry point */
     mw.loader.using( [], () => {
         const body = document.getElementsByClassName('mw-body-content')[0];
         const cardElems = body.getElementsByClassName( 'listing-edit' );
