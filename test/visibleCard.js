@@ -721,7 +721,7 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                                     <cdx-image
                                         :src="'//commons.wikimedia.org/w/index.php?title=Special:Filepath/' + lookupSelection[name]"
                                         :key="lookupSelection[name]"
-                                        alt="No valid image selected"
+                                        alt="No valid image found"
                                         position="center"
                                         v-if="option.widget === 'image'"
                                     ></cdx-image>
@@ -1322,7 +1322,11 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
          */
         constructor( params, elem = null ) {
             /** @type {Object} */
-            this.params = Object.assign( {}, PARAMS, params );
+            this.rawParams = params.name ? (({ rawText, ...rest }) => rest)(VCARDMAP[params.name]) : {};
+            /** @type {String} */
+            this.rawText = params.name ? VCARDMAP[params.name].rawText : null;
+            /** @type {Object} */
+            this.params = { ...PARAMS, ...params, ...this.rawParams };
             /** @type {Element} */
             this.elem = elem;
 
@@ -1347,6 +1351,9 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
             elem.getElementsByClassName( 'listing-metadata-items' )[0].append( link );
         };
 
+        /**
+         * Open visibleCard dialog
+         */
         openDialog() {
             const container = document.createElement( 'div' );
             container.classList.add( [ 'voy-vCard-dialog-container' ] );
@@ -1369,15 +1376,6 @@ mw.loader.using( ['ext.kartographer.box', 'mediawiki.api', 'mediawiki.ForeignApi
                 .component( 'CdxTooltip', Codex.CdxTooltip  )
                 .component( 'CdxToast', Codex.CdxToast  )
                 .mount( container );
-        };
-
-        extractWikitext() {
-            const name = this.params.name;
-            if (!name) {
-                console.error("The name of vCard not found");
-                return this.params;
-            }
-            //
         };
 
         /**
